@@ -1,0 +1,129 @@
+---
+title: Connect Claude in 60 seconds
+description: npx @prysmid/mcp in your Claude Desktop or Claude Code config. Done.
+---
+
+import { Steps, Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+Connecting your Claude agent to Prysm:ID literally takes under a minute. Here's the full path.
+
+<Steps>
+
+1. **Create a machine key.**
+
+   In `app.prysmid.com → settings → machine keys`, click **New machine key**. Give it a name (`my-local-agent`), select the scope (`workspace:admin` to start), and download the JSON. You'll use it in the next step.
+
+   <Aside type="note">
+   The machine key is a **scoped service account**, not your personal API key. If compromised, you rotate it from the dashboard without affecting other integrations. [More on machine keys →](/en/agents/machine-keys/)
+   </Aside>
+
+2. **Configure Claude.**
+
+   <Tabs syncKey="claude-app">
+   <TabItem label="Claude Desktop">
+   Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+   ```json
+   {
+     "mcpServers": {
+       "prysmid": {
+         "command": "npx",
+         "args": ["-y", "@prysmid/mcp"],
+         "env": {
+           "PRYSMID_MACHINE_KEY_PATH": "/Users/you/.prysmid/key.json"
+         }
+       }
+     }
+   }
+   ```
+
+   Restart Claude. When it boots, you'll see "prysmid" in the tools list (hammer icon).
+   </TabItem>
+
+   <TabItem label="Claude Code">
+   In `~/.claude/mcp.json` (or via the CLI):
+
+   ```bash
+   claude mcp add prysmid -- npx -y @prysmid/mcp
+   ```
+
+   And configure the env var:
+
+   ```bash
+   export PRYSMID_MACHINE_KEY_PATH=/path/to/key.json
+   ```
+
+   `claude /mcp` to verify the connection.
+   </TabItem>
+
+   <TabItem label="Cursor / others">
+   Any MCP client supports the standard pattern:
+
+   ```json
+   {
+     "mcpServers": {
+       "prysmid": {
+         "command": "npx",
+         "args": ["-y", "@prysmid/mcp"],
+         "env": {
+           "PRYSMID_MACHINE_KEY_PATH": "/path/to/key.json"
+         }
+       }
+     }
+   }
+   ```
+
+   If your client doesn't support env vars, pass the key inline with `--key-file`.
+   </TabItem>
+   </Tabs>
+
+3. **Test.**
+
+   Ask Claude something simple:
+
+   > "List my workspaces in Prysm:ID."
+
+   Claude calls the `workspaces.list` tool, gets the JSON, shows you a table. If this works, everything else works.
+
+</Steps>
+
+## What to ask Claude (examples)
+
+These prompts the MCP server understands without effort:
+
+> "Create a new workspace called `acme-test`, free plan."
+
+> "In workspace `acme`, register an OAuth app called `My SaaS Dev` with redirect_uri `http://localhost:3000/auth/callback`."
+
+> "Connect Google as an IdP on workspace `acme`. The OAuth credentials are already in my env vars as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`."
+
+> "Show me the last 20 logins on workspace `acme` over the last 24 hours."
+
+> "Upload the logo from `~/Downloads/acme-logo.png` to workspace `acme` and set the primary color to `#FF6B6B`."
+
+> "Move `acme` to Pro plan with a $200 spending cap."
+
+## Typical workflows
+
+**A new enterprise customer signs**:
+> "In workspace `my-saas-prod`, create a tenant called `bigcorp`, connect Okta as IdP using these credentials [...], and upload bigcorp.png as the logo."
+
+**Audit comes around**:
+> "For workspace `my-saas-prod`, export the last 30 days of audit log as CSV."
+
+**Something's broken in production**:
+> "Show failed webhooks for workspace `my-saas-prod` in the last 6 hours and why they failed."
+
+## If something fails
+
+**Claude says "I don't have access to a Prysmid tool".**
+MCP config didn't load. Fully restart Claude (not just close the window — actual `Quit`). Verify the config file path.
+
+**`PRYSMID_MACHINE_KEY_PATH not found`.**
+The env var didn't reach Claude's subprocess. On macOS, launching Claude from Finder doesn't inherit your shell env. Try launching from terminal: `open -a Claude`.
+
+**`401 Unauthorized` on the first tool call.**
+Machine key expired or was revoked. Generate a new one from the dashboard and update the path.
+
+**Claude calls the tool but says "I'm not sure if you want to do this".**
+The tool has `requiresConfirmation: true` (the destructive ones do). Approve explicitly with "Yes, proceed".

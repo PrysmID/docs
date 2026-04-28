@@ -1,0 +1,134 @@
+---
+title: Validate JWTs in your backend
+description: Verify signature, audience, expiration. JWKS rotation. Examples in Node, Python and Go.
+---
+
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+When your app receives an `id_token` from the OIDC callback (or an `access_token` in an `Authorization: Bearer` header), your backend has to validate it before trusting it. Validating means four things:
+
+1. **Signature** correct against the issuer's public key (JWKS).
+2. **`iss`** = `https://auth.<your_slug>.prysmid.com` exactly.
+3. **`aud`** = your `client_id`.
+4. **`exp`** > now.
+
+Miss any of the four and you reject. There is no "validate ish".
+
+<Aside type="caution">
+**Never** validate JWTs by decoding the payload without verifying the signature. An attacker can mint any JWT with any `sub` they want; the only thing that distinguishes a legit one is the signature. Libraries that accept `algorithm: none` by mistake are a classic CVE.
+</Aside>
+
+## Examples
+
+<Tabs syncKey="lang">
+<TabItem label="Node.js (jose)">
+```js
+import { createRemoteJWKSet, jwtVerify } from 'jose';
+
+const ISSUER = 'https://auth.acme.prysmid.com';
+const AUDIENCE = process.env.PRYSMID_CLIENT_ID;
+
+// JWKS auto-caches with sensible TTL and refreshes on key rotation.
+const jwks = createRemoteJWKSet(new URL(`${ISSUER}/oauth/v2/keys`));
+
+export async function verifyIdToken(token) {
+  const { payload } = await jwtVerify(token, jwks, {
+    issuer: ISSUER,
+    audience: AUDIENCE,
+  });
+  return payload; // { sub, email, name, exp, iat, ... }
+}
+```
+</TabItem>
+
+<TabItem label="Python (PyJWT + jwks)">
+```python
+import jwt
+from jwt import PyJWKClient
+
+ISSUER = "https://auth.acme.prysmid.com"
+AUDIENCE = os.environ["PRYSMID_CLIENT_ID"]
+
+jwks_client = PyJWKClient(f"{ISSUER}/oauth/v2/keys")
+
+def verify_id_token(token: str) -> dict:
+    signing_key = jwks_client.get_signing_key_from_jwt(token)
+    return jwt.decode(
+        token,
+        signing_key.key,
+        algorithms=["RS256"],
+        audience=AUDIENCE,
+        issuer=ISSUER,
+    )
+```
+</TabItem>
+
+<TabItem label="Go (go-oidc)">
+```go
+import (
+    "context"
+    "github.com/coreos/go-oidc/v3/oidc"
+)
+
+const issuer = "https://auth.acme.prysmid.com"
+
+func newVerifier(ctx context.Context) (*oidc.IDTokenVerifier, error) {
+    provider, err := oidc.NewProvider(ctx, issuer)
+    if err != nil {
+        return nil, err
+    }
+    return provider.Verifier(&oidc.Config{
+        ClientID: os.Getenv("PRYSMID_CLIENT_ID"),
+    }), nil
+}
+
+func verify(ctx context.Context, v *oidc.IDTokenVerifier, raw string) (*oidc.IDToken, error) {
+    return v.Verify(ctx, raw)
+}
+```
+</TabItem>
+
+<TabItem label="Ruby (jwt + json)">
+```ruby
+require 'jwt'
+require 'open-uri'
+require 'json'
+
+ISSUER = 'https://auth.acme.prysmid.com'
+AUDIENCE = ENV['PRYSMID_CLIENT_ID']
+
+def jwks
+  @jwks ||= JSON.parse(URI.open("#{ISSUER}/oauth/v2/keys").read)
+end
+
+def verify_id_token(token)
+  decoded, = JWT.decode(token, nil, true, {
+    algorithms: ['RS256'],
+    iss: ISSUER, verify_iss: true,
+    aud: AUDIENCE, verify_aud: true,
+    jwks: jwks,
+  })
+  decoded
+end
+```
+</TabItem>
+</Tabs>
+
+## Things most people forget
+
+**Cache JWKS, but not forever.** Keys rotate. If your library caches JWKS for days without honoring `Cache-Control` or `kid` mismatch, you'll start rejecting valid tokens when we rotate. The libraries above (`jose`, `PyJWKClient`, `go-oidc`) handle this correctly by default.
+
+**Clock.** If your server has minute-level clock skew, you'll reject freshly issued tokens by `exp`. Sync NTP.
+
+**`access_token` vs `id_token`.** The `id_token` is for your *backend* (proves user identity). The `access_token` is for talking to APIs (Zitadel or others). Don't mix them.
+
+**Multi-tenant: validate `resourceowner`.** If you serve many tenants in one instance, `iss/aud/exp/sig` isn't enough — also check that `urn:zitadel:iam:user:resourceowner:id` matches the tenant the user is trying to access. Otherwise Bob from Acme could use his Acme token to access Globex resources in your app.
+
+## Common errors and what they mean
+
+| Error | Typical cause |
+|---|---|
+| `Invalid signature` | You cached a stale JWKS, or your library doesn't support RS256 (check flags). |
+| `Invalid audience` | Your `client_id` changed, or the token came from another app in your workspace. |
+| `Token expired` | The `id_token` lasts ~1h. Refresh with `refresh_token`. |
+| `Issuer mismatch` | You changed the workspace slug. The `iss` reflects it: `auth.<slug>.prysmid.com`. |

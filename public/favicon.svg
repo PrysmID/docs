@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Prysm:ID">
+  <title>Prysm:ID — Mark cuadrado</title>
+  <desc>Mark cuadrado canónico de Prysm:ID. Fragmento literal del wordmark: ":ID" con el colon en Ultra (violeta brand) y el bloque "ID" en gradiente espectral idéntico al wordmark, sobre fondo Ink. Geometría tipográfica: colon asentado entre baseline y x-height (no centrado vertical), gaps colon→I e I→D iguales. Lectura emergente: emoticón sonriente.</desc>
+  <defs>
+    <linearGradient id="prysmid-mark-spec" gradientUnits="userSpaceOnUse" x1="86" y1="0" x2="208" y2="0">
+      <stop offset="0" stop-color="#4B2FD6"/>
+      <stop offset="0.25" stop-color="#2F6BD6"/>
+      <stop offset="0.5" stop-color="#2FC6D6"/>
+      <stop offset="0.75" stop-color="#D6A62F"/>
+      <stop offset="1" stop-color="#D6452F"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo Ink con esquinas redondeadas (radio 22% del lado = 56px) -->
+  <rect width="256" height="256" rx="56" fill="#0B0B14"/>
+
+  <!--
+    Bloque ":ID" tipográficamente correcto.
+    Cap-height 120px (top y=68, baseline y=188).
+    x-height-line ≈ y=102 (ratio Inter 0.72).
+    Colon "pegado al piso": punto inferior con bottom en baseline,
+    punto superior con top en x-height-line.
+    Gaps colon→I = I→D = 14px (proporciones uniformes).
+  -->
+
+  <!-- Colon (Ultra brand) -->
+  <g fill="#4B2FD6">
+    <circle cx="60" cy="114" r="12"/>
+    <circle cx="60" cy="176" r="12"/>
+  </g>
+
+  <!-- ID (gradiente espectral) -->
+  <g fill="url(#prysmid-mark-spec)">
+    <!-- I — barra rectangular de 24×120, x=86 a x=110 -->
+    <rect x="86" y="68" width="24" height="120" rx="3"/>
+
+    <!-- D — stem 24 + bowl arc radio 60, x=124 a x=208 -->
+    <path fill-rule="evenodd"
+          d="M 124 68
+             L 148 68
+             A 60 60 0 0 1 148 188
+             L 124 188
+             Z
+             M 148 92
+             L 148 164
+             A 36 36 0 0 0 148 92
+             Z"/>
+  </g>
+</svg>

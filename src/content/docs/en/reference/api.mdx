@@ -1,0 +1,54 @@
+---
+title: API reference
+description: Live OpenAPI spec for the Prysm:ID API. Auto-updated with every backend deploy.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The **complete, interactive, always-up-to-date** spec lives at:
+
+> 📘 **[api.prysmid.com/docs](https://api.prysmid.com/docs)** — Swagger UI with embedded "Try it out".
+
+Re-publishing the OpenAPI here would create drift. We keep one source of truth: the FastAPI backend emits the spec dynamically, Swagger consumes it, you always see the deployed version.
+
+## Shortcuts
+
+- **Raw OpenAPI JSON**: [`api.prysmid.com/openapi.json`](https://api.prysmid.com/openapi.json)
+- **Swagger UI**: [`api.prysmid.com/docs`](https://api.prysmid.com/docs)
+- **ReDoc** (alternative, more readable for printing): [`api.prysmid.com/redoc`](https://api.prysmid.com/redoc)
+
+## Authenticating API requests
+
+All calls to `api.prysmid.com/v1/*` require `Authorization: Bearer <token>`. The token can be:
+
+1. **Your human session** (OIDC cookie) — valid when your browser is logged into `app.prysmid.com`. Useful for quick curl.
+2. **Machine key access_token** — for programmatic and agent use. See [machine keys →](/en/agents/machine-keys/).
+3. **Personal access token** (Pro+) — long-lived token tied to your human account. `Settings → API tokens` in the dashboard.
+
+```bash
+# List workspaces via API
+curl -H "Authorization: Bearer $TOKEN" \
+  https://api.prysmid.com/v1/workspaces
+```
+
+## Versioning
+
+`v1` is the namespace. When we break compatibility, `v2` ships and we keep `v1` with full support for at least 12 months. Additive changes (new fields, new endpoints) go to `v1` directly and we announce them in the [changelog](/en/reference/changelog/).
+
+## SDK generators
+
+Standard OpenAPI means you can generate your own client in any language:
+
+```bash
+# Example with openapi-generator
+openapi-generator-cli generate \
+  -i https://api.prysmid.com/openapi.json \
+  -g typescript-fetch \
+  -o ./prysmid-sdk
+```
+
+Official SDKs at `@prysmid/sdk-*` are on the roadmap (Q3 2026). Meanwhile, community generators or direct calls work perfectly.
+
+<Aside type="note">
+The REST API and MCP server always expose the same operation set. If one has something the other doesn't, that's a bug — report on GitHub.
+</Aside>

@@ -1,0 +1,93 @@
+---
+title: Safe defaults
+description: Qué bloqueamos por default y cómo elevar permisos cuando es realmente necesario. La filosofía detrás del modelo.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Los agentes son rapidísimos. Eso es bueno cuando hacés algo bien y malo cuando hacés algo mal — los errores también escalan. Prysm:ID asume eso desde el diseño y aplica una capa de "safe defaults" sobre el plano de control que un agente toca.
+
+## Tres anillos de protección
+
+**1. Scope de la machine key.**
+Cualquier acción que el scope no permita, falla con `403 forbidden_by_scope` antes de tocar Stripe, antes de borrar nada, antes de cambiar nada. Vos elegís el scope cuando creás la key.
+
+**2. Confirmation gates en el MCP server.**
+Las operaciones destructivas o costosas requieren un `confirmed: true` explícito. El primer call del agente devuelve:
+
+```json
+{
+  "requires_confirmation": true,
+  "confirmation_token": "ct_abc123",
+  "summary": "This will permanently delete workspace 'acme' and all 1,247 users.",
+  "irreversible": true
+}
+```
+
+El agente **no puede** auto-confirmar. Te muestra el summary, espera tu OK, y solo entonces re-llama con `confirmed: true, confirmation_token: ct_abc123`. Esto bloquea la clase de bug "el agente alucinó y borró producción".
+
+**3. Rate limits dedicados al control plane.**
+Un agente desbocado intentando crear 1000 workspaces va a tope con un cap por minuto. Ver [rate limits](/reference/rate-limits/).
+
+## Qué requiere confirmación humana
+
+| Acción | Por qué |
+|---|---|
+| `workspaces.delete` | Irreversible. Borra una instance Zitadel entera. |
+| `tenants.delete` | Irreversible. Pierde users del tenant. |
+| `apps.delete` | Romperás logins activos de esa app. |
+| `idps.remove` cuando es el único IdP | Dejarías el workspace sin método de login. |
+| `keys.create` con `workspace:admin` | Crear keys con privilegio máximo merece confirmación. |
+| `billing.set_plan` cuando es **downgrade** | Puede reducir cuota de MAU bruscamente. |
+| `branding.set_custom_domain` | Cambia el issuer; puede romper apps existentes. |
+| `webhooks.delete` cuando es el único activo | Perderías visibilidad de eventos. |
+
+## Qué **no** requiere confirmación (y por qué)
+
+| Acción | Por qué |
+|---|---|
+| Creación de cosas reversibles (workspaces, apps, IdPs) | Si el agente creó algo de más, lo borrás. Costo bajo. |
+| `branding.set` | Cambiar logo no es destructivo; reversible en un click. |
+| `webhooks.create` | Adicionar callbacks adicionales no rompe los existentes. |
+| Lectura de cualquier cosa | Obvio. |
+| `billing.set_plan` cuando es **upgrade** | Pagar más nunca rompió un cliente. (Es broma. Pero el riesgo de un upgrade automático es bajo y reversible al fin del período.) |
+
+## Auditoría de acciones de agentes
+
+En `app.prysmid.com → audit`, cada acción tiene un `actor`:
+
+- `actor=user:<email>` → un humano hizo eso (sesión OIDC).
+- `actor=key:<machine_key_id>` → una machine key hizo eso.
+
+Filtrá por `actor:starts-with(key:)` y vas a ver todo lo automatizado. Si un día algo raro aparece, sabés inmediatamente si fue agente y cuál.
+
+## Cómo *desactivar* un confirmation gate (si realmente querés)
+
+A veces tenés un workflow batch totalmente automático donde la pausa de confirmación es ruido. Para esos casos:
+
+```bash
+curl -X POST https://api.prysmid.com/v1/workspaces/$WS/machine-keys/$KEY_ID \
+  -d '{"unattended_mode": true}'
+```
+
+Esto **elimina** las confirmation gates para esa key específica. Es un trade-off explícito: ganás automatización, perdés la red de seguridad. Recomendaciones:
+
+- **Solo en keys con scope acotado.** Una key `tenant:acme:write` con `unattended_mode` es razonable. Una `workspace:admin` no.
+- **Solo con expiración corta** (semanas, no años).
+- **Solo en pipelines determinísticos**, no en agentes interactivos. Un cron de provisión de demos sí; tu Claude personal no.
+
+<Aside type="caution">
+Si elegís `unattended_mode`, entendé qué estás haciendo. Es la diferencia entre "el agente sugiere y vos confirmás" y "el agente ejecuta y vos te enterás después por audit log".
+</Aside>
+
+## Lo que estamos pensando para el futuro
+
+- **Approval queues**: para teams donde un agente propone cambios y un humano *otro* aprueba (no el que está hablando con el agente).
+- **Anomaly detection**: alertas automáticas cuando una machine key hace algo fuera de su patrón histórico (volumen anómalo, nueva clase de operación, hora rara).
+- **Per-tool fine-grained scopes**: hoy tenés `workspace:write`, pero podrías querer `apps:write` sin `idps:write`. Lo discutimos en GitHub si te interesa.
+
+## Filosofía
+
+> El agente es usuario de primera clase. Pero "primera clase" no significa "sin guardrails". Significa **el mismo respeto y la misma desconfianza inteligente que aplicás a un colega nuevo con acceso producción**.
+
+Las gates no están para frenarte — están para que cuando un día tu agente alucine, el blast radius sea recuperable, no terminal.

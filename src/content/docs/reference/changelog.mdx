@@ -1,0 +1,51 @@
+---
+title: Changelog
+description: Lo que cambió y cuándo. Versionado por API + cambios materiales del producto.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Acá registramos cambios materiales — los que afectan tu integración o tu dashboard. Patches y bug fixes menores no entran a este log; viven en GitHub releases.
+
+## API v1 — actual
+
+### 2026-04-28
+- **Migración Stripe metered → MeterEvent**. La métrica de overage ahora va por `stripe.billing.MeterEvent.create` en vez del legacy `SubscriptionItem.create_usage_record`. Sin cambios visibles en tu integración; los upgrades funcionan como antes pero usan el meter API moderno.
+- **Webhook handler endurecido**. Fix en proyección de StripeObject que afectaba a `dict()` en algunas combinaciones de Python/SDK. Los webhooks de Stripe que estaban fallando con 500 ahora se procesan limpio.
+- **`docs.prysmid.com` lanzada**. Esta página existe.
+- **`app.prysmid.com/` redirige a `/app`**. Antes servía JSON crudo — ahora bouncea al login. Confusión menos.
+
+### 2026-04-26
+- **Fase 16.4 — Onboarding wizard**. Banner inline en la pantalla de detalle del workspace para guiar el primer setup.
+- **Hallazgo #74**. Link del header del dashboard ya no apunta a un JSON.
+
+### 2026-04-25
+- **Fase 16.3 — Stripe checkout E2E**. Flujo completo Free → Pro funcional. Customer Portal pinneado en `bpc_*` (cancel-only, sin plan switch via portal).
+- **SubscriptionSchedule pattern para downgrades**. Pro → Free schedulea al fin del período sin reembolso, en vez de cancel inmediato.
+
+### 2026-04-23
+- **Fase 16.2 — Signup self-serve**. OAuth Google + GitHub habilitados para signup en `app.prysmid.com`. Workspace `prysmid-hq` creado.
+
+### 2026-04-15
+- **Fase 16.1 — Landing `prysmid.com` live**.
+
+## API v0 → v1 (futuro)
+
+Por ahora estamos en `v1`. Cuando tengamos cambios breaking (movimiento de campos, cambio de semántica), saldrá `v2` con anuncio mínimo de 90 días y `v1` mantenido por 12 meses.
+
+Cosas en consideración para `v2`:
+- Naming consistency en algunos endpoints (`workspace_id` vs `workspaceId` — hoy mezclamos según área).
+- Pagination cursor-based en lugar de offset-based para listados grandes.
+- Nuevo formato de error con structured details (mantenemos retro-compat).
+
+Si te afecta un cambio futuro, lo decimos antes — no después.
+
+## RSS / suscripción
+
+Hay un feed RSS en [docs.prysmid.com/changelog.xml](https://docs.prysmid.com/changelog.xml) (TODO — pending Astro RSS plugin integration).
+
+Mientras tanto, watcheá el repo de docs en [GitHub](https://github.com/PrysmID/docs). Cada cambio de este archivo es un commit.
+
+<Aside type="tip">
+**Si una integración tuya rompe sin warning**, escribinos. Significa que algo entró como breaking sin que lo marquemos como tal — bug en nuestro proceso, no en tu código.
+</Aside>

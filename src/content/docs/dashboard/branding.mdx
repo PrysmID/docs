@@ -1,0 +1,60 @@
+---
+title: Branding del login
+description: Cómo configurarlo desde el dashboard. Preview en vivo. Custom domain.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`Dashboard → Branding`. Tres tabs: **Logo & colors**, **Custom domain**, **Custom CSS** (Pro+).
+
+## Logo & colors
+
+**Logo**:
+- PNG o SVG.
+- Tamaño max: 1 MB.
+- Resolución recomendada: 320×80 px (apaisado) o 80×80 px (cuadrado).
+- Subilo arrastrando o desde tu Files.
+
+**Colores**:
+- Primary (botones, links, focus states).
+- Background del login (sólido o imagen).
+
+A la derecha tenés un **preview en vivo** que muestra cómo se va a ver tu login con esos cambios. Cambia mientras escribís el hex code. Refrescá la pestaña si te gusta.
+
+**Save**: aplica a la próxima sesión. Sesiones existentes siguen viendo el branding viejo hasta logout.
+
+## Custom domain (Pro+)
+
+Si querés que el login viva en `auth.tuapp.com` en vez de `auth.tu-slug.prysmid.com`:
+
+1. Tab "Custom domain". Ingresá tu dominio.
+2. Te damos un valor CNAME. Configuralo en tu DNS (Cloudflare / Route 53 / wherever).
+3. Click "Verify". Validamos el CNAME.
+4. Cuando propaga (1-15 min), emitimos cert TLS via Let's Encrypt.
+5. Status flips a `active`. Tu app empieza a usar el nuevo issuer.
+
+<Aside type="caution">
+Cambiar el issuer rompe tokens emitidos con el viejo `iss`. Recomendación: aceptá ambos issuers en tu validador 24-48h, o cambiá durante una ventana de mantenimiento. [Más en /integrate/custom-branding →](/integrate/custom-branding/)
+</Aside>
+
+## Custom CSS (Pro+)
+
+Si la paleta + logo no te alcanza, podés inyectar CSS adicional. Tab "Custom CSS". Editor con syntax highlighting. Limitaciones:
+
+- No JavaScript.
+- Max 64 KB.
+- No `@import` de fuentes externas (hosteás vos).
+
+Validamos sintaxis al save; si rompe el CSS de la página, te lo decimos antes de aplicar. Backups automáticos de versiones anteriores; podés revertir.
+
+## Quitar el footer "Powered by Prysm:ID"
+
+Toggle "Show Prysm:ID footer". Solo en Pro+.
+
+## Preview en otros idiomas
+
+Si tu workspace tiene users en múltiples idiomas, podés ver el preview en español, inglés, portugués, francés desde el selector arriba a la derecha del preview. El layout es el mismo; lo que cambia es el copy de los labels.
+
+## Branding por tenant (Pro+)
+
+Misma sección, pero entrás desde `Workspace → Tenants → <tenant> → Branding`. Los overrides aplican solo cuando el flow OIDC viene con `tenant_hint=<tenant>`. Sin hint, gana el branding del workspace. [Más detalles en /integrate/custom-branding →](/integrate/custom-branding/)

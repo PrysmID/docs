@@ -1,0 +1,60 @@
+---
+title: Login branding
+description: How to configure it from the dashboard. Live preview. Custom domain.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`Dashboard → Branding`. Three tabs: **Logo & colors**, **Custom domain**, **Custom CSS** (Pro+).
+
+## Logo & colors
+
+**Logo**:
+- PNG or SVG.
+- Max size: 1 MB.
+- Recommended resolution: 320×80 px (landscape) or 80×80 px (square).
+- Upload by dragging or from your Files.
+
+**Colors**:
+- Primary (buttons, links, focus states).
+- Login background (solid or image).
+
+On the right you have a **live preview** showing how your login will look with those changes. It updates as you type the hex code. Refresh the tab if you like it.
+
+**Save**: applies to the next session. Existing sessions keep seeing the old branding until logout.
+
+## Custom domain (Pro+)
+
+If you want the login to live at `auth.yourapp.com` instead of `auth.your-slug.prysmid.com`:
+
+1. "Custom domain" tab. Enter your domain.
+2. We give you a CNAME value. Configure it in your DNS (Cloudflare / Route 53 / wherever).
+3. Click "Verify". We validate the CNAME.
+4. When it propagates (1-15 min), we issue a TLS cert via Let's Encrypt.
+5. Status flips to `active`. Your app starts using the new issuer.
+
+<Aside type="caution">
+Changing the issuer breaks tokens issued under the old `iss`. Recommendation: accept both issuers in your validator for 24-48h, or change during a maintenance window. [More at /integrate/custom-branding →](/en/integrate/custom-branding/)
+</Aside>
+
+## Custom CSS (Pro+)
+
+If palette + logo isn't enough, inject additional CSS. "Custom CSS" tab. Syntax-highlighted editor. Limits:
+
+- No JavaScript.
+- Max 64 KB.
+- No `@import` of remote fonts (you host them).
+
+We validate syntax on save; if it breaks page CSS we tell you before applying. Automatic backups of prior versions; you can revert.
+
+## Remove the "Powered by Prysm:ID" footer
+
+Toggle "Show Prysm:ID footer". Pro+ only.
+
+## Preview in other languages
+
+If your workspace has users in multiple languages, preview in Spanish, English, Portuguese, French via the selector top-right of the preview. Layout is the same; what changes is label copy.
+
+## Per-tenant branding (Pro+)
+
+Same section, but you enter from `Workspace → Tenants → <tenant> → Branding`. Overrides apply only when the OIDC flow arrives with `tenant_hint=<tenant>`. Without a hint, the workspace branding wins. [More details at /integrate/custom-branding →](/en/integrate/custom-branding/)

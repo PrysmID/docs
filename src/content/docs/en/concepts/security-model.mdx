@@ -1,0 +1,79 @@
+---
+title: Security model
+description: Isolation, encryption, audit, key rotation and portability. What your auditor wants to know.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+This page exists so when your enterprise customer audits you, you have something to paste into the response without writing from scratch. Organized by the questions we actually get.
+
+## Isolation
+
+**Do you share a database with other tenants?**
+No. Each workspace has its own Zitadel instance with its own schema in Postgres. No cross-workspace shared table except the control plane (billing, Prysm:ID's own audit), which contains no PII of your end users.
+
+**Is there a network path between instances?**
+Instances don't talk to each other. One instance can't query another, not even through a misconfiguration: they live in separate VPCs / namespaces.
+
+**What if the control plane is breached?**
+The control plane can orchestrate workspaces (create, suspend, read config) but can't read your end users' credentials. Passwords live hashed (bcrypt) inside the workspace's Zitadel instance, never leave it.
+
+## Encryption
+
+**At rest**: Postgres with AES-256 volume-level encryption (gp3 EBS encrypted). Snapshots and backups also encrypted.
+
+**In transit**: TLS 1.3 enforced on every public endpoint (`auth.*.prysmid.com`, `api.prysmid.com`, `app.prysmid.com`). The control plane talks to the Zitadel instance over internal TLS too; no plain traffic on any hop.
+
+**Application-level**: the Zitadel service-account credentials the control plane needs to operate your instance are **encrypted with Fernet** before persisting. The encryption key lives only in SSM Parameter Store (not in code, not in plain DB backups).
+
+## Keys and token signing
+
+Each Zitadel instance has its own key store. `id_token` and `access_token` are signed with **RS256** by default. Public keys are exposed via JWKS at `https://auth.<slug>.prysmid.com/oauth/v2/keys`.
+
+**Rotation**: Zitadel rotates signing keys automatically. The old key stays valid for a grace period. Your client must follow JWKS dynamically, not cache a fixed key (most OIDC libraries do this right by default).
+
+## Audit
+
+**Who does what inside your instance**: Zitadel's native audit log records every event (signup, login, logout, password change, IdP linking, role grant, app registration). Access it via your instance's admin API, or via the dashboard at `app.prysmid.com → audit`.
+
+**Who touches the control plane**: separate audit log for admin actions on `app.prysmid.com` (which workspace member changed what). Visible from the dashboard.
+
+**Retention**: 90 days on Pro, 1 year on Enterprise. Free, 30 days.
+
+## Portability — the "exit plan"
+
+This is the structural difference vs Clerk / Auth0 / WorkOS, so it gets documented properly.
+
+If you want to leave Prysm:ID today, you can:
+
+1. **Export**. Go to **Settings → Export** on the workspace. You download:
+   - Full dump of your Zitadel instance (official Zitadel format: users, IdPs, projects, apps, roles, branding).
+   - OpenAPI spec of the OIDC endpoints your app consumes (they don't change — standard OIDC).
+   - SQL dump of Postgres if you want bit-for-bit validation (Enterprise).
+
+2. **Stand up your own Zitadel**. [Official Zitadel docs](https://zitadel.com/docs/self-hosting/deploy) — any server with Postgres works. Realistic operation is days, not months.
+
+3. **Import the dump**. `zitadel admin import <dump>`. Users, IdPs, apps — everything restores.
+
+4. **Point your DNS**. `auth.acme.prysmid.com` you point yourself (CNAME to your server) or change the issuer in your app. Tokens issued before stay valid until expiry.
+
+5. **Cancel Prysm:ID**. Delete the workspace from the dashboard. The instance is deleted; backups purge at 90 days.
+
+<Aside type="tip">
+This isn't pitch material — the command to start is real: `zitadel admin export`. Try it on a test workspace before you need it.
+</Aside>
+
+## Compliance
+
+| Standard | Status |
+|---|---|
+| SOC 2 Type II | In progress (target: Q3 2026). |
+| LGPD | Compliant (processor, contract available). Dedicated workspaces help posture. |
+| Habeas Data (Argentina, Colombia) | Compliant. |
+| GDPR | Compliant (processor). DPA available on Enterprise. |
+| HIPAA | No (out of scope today). |
+| PCI-DSS | We don't process cards — Stripe does. |
+
+## Report vulnerabilities
+
+`security@prysmid.com` or PGP key at `https://prysmid.com/.well-known/security.txt`. Acknowledgment within 24h. Bug bounty pending; we handle responsible disclosure case-by-case meanwhile.

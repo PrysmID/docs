@@ -1,0 +1,98 @@
+---
+title: Error codes
+description: Errors returned by the Prysm:ID API. What they mean, what to do.
+---
+
+The REST API and MCP server return errors with the same shape:
+
+```json
+{
+  "error": {
+    "code": "workspace_slug_taken",
+    "message": "The slug 'acme' is already in use. Try 'acme-corp' or pick another.",
+    "request_id": "req_xyz123"
+  }
+}
+```
+
+- **`code`**: machine-readable, stable. Changing it is a breaking change.
+- **`message`**: human-readable, can change.
+- **`request_id`**: paste it if you open a ticket — we find the log instantly.
+
+## Categories
+
+### 4xx — client error
+
+| HTTP | Code | What happens |
+|---|---|---|
+| 400 | `invalid_request` | Malformed parameter. Check `message` for detail. |
+| 400 | `validation_failed` | Field validation failure (slug too short, invalid hex color, etc). |
+| 401 | `unauthorized` | No token or expired token. |
+| 401 | `invalid_token` | Token doesn't sign with the expected key. Maybe you rotated the machine key. |
+| 403 | `forbidden_by_scope` | Your token lacks scope for this action. |
+| 403 | `requires_confirmation` | Destructive op, missing `confirmed: true`. |
+| 404 | `not_found` | Resource doesn't exist or you can't see it. |
+| 409 | `workspace_slug_taken` | Slug already in use. |
+| 409 | `state_conflict` | Resource is in a state that doesn't allow this op (e.g. `delete` while `provisioning`). |
+| 422 | `enterprise_only` | Action only available on Enterprise plan. |
+| 422 | `pro_required` | Action only on Pro+. |
+| 429 | `rate_limited` | Too many requests. Check `Retry-After` header. |
+
+### 5xx — our error
+
+| HTTP | Code | What happens |
+|---|---|---|
+| 500 | `internal_error` | Bug on our side. Report with `request_id`. |
+| 502 | `upstream_error` | Something upstream (Stripe, Zitadel, EmBoux, Cloudflare) failed. Retry with backoff. |
+| 503 | `service_unavailable` | Maintenance or partial degradation. Retry. |
+
+## Area-specific errors
+
+### Workspaces
+
+- `workspace_slug_invalid` — disallowed chars (only `a-z 0-9 -`).
+- `workspace_slug_too_short` — minimum 3 chars.
+- `workspace_slug_reserved` — reserved word (`auth`, `api`, `app`, `admin`, etc.).
+- `workspace_provisioning_failed` — initial provisioning blew up. Check `details`.
+
+### Apps
+
+- `redirect_uri_invalid` — not a valid URL or uses a forbidden scheme.
+- `redirect_uri_localhost_only_dev` — `http://localhost` dev-only (Pro+ allows override).
+- `client_secret_revoked` — secret is no longer valid. You rotated more than 24h ago.
+
+### IdPs
+
+- `idp_oauth_failed` — Google/GitHub/MS rejected the credentials. Verify `client_id`/`secret`.
+- `idp_metadata_invalid` — SAML XML malformed or unsigned.
+- `idp_already_configured` — provider already in this workspace.
+
+### Billing
+
+- `payment_method_required` — you moved to Pro with no valid card.
+- `subscription_past_due` — you need to resolve payment to continue.
+- `signups_blocked` — you hit your spending cap. Raise it or wait for next period.
+
+### Webhooks
+
+- `webhook_url_invalid` — URL is not https or doesn't respond to HEAD.
+- `webhook_secret_required` — endpoint registered but missing secret (rare, our bug).
+
+## Token validation errors (OIDC client)
+
+These come from Zitadel directly, not us. Standard OAuth 2 shape:
+
+```
+{ "error": "invalid_grant", "error_description": "..." }
+```
+
+Common:
+
+- `invalid_grant` — code expired, redirect_uri mismatch, code reused.
+- `invalid_client` — `client_id`/`secret` wrong.
+- `unsupported_grant_type` — you passed a grant type we didn't enable for your app.
+- `access_denied` — user aborted consent.
+
+## If you can't find your error here
+
+Report it on [GitHub](https://github.com/PrysmID/platform/issues) with `request_id`. The canonical list is the backend `code`s; this doc lags occasionally.

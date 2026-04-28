@@ -1,0 +1,62 @@
+---
+title: Rate limits
+description: Limits del control plane y del data plane. Cómo medirlos, cómo manejarlos.
+---
+
+## Dos planos, dos políticas
+
+| Plano | Endpoint | Límite | Por qué |
+|---|---|---|---|
+| **Control** | `api.prysmid.com/v1/*` | 60 req/min por workspace, 600 req/min por org | Operaciones de admin: bajo volumen, alto costo. Limitar protege Stripe, Cloudflare, Zitadel admin de abuse. |
+| **Data** | `auth.<slug>.prysmid.com/*` | 50 req/seg por instance (burst 200) | Login flow: alto volumen. Configurable Pro+ si crecés. |
+| **Webhooks** (egreso) | nuestro POST a tu endpoint | 100 deliveries/min por endpoint | Te protege a vos: si tu endpoint se rompe, no te bombardeamos. |
+
+## Headers en la response
+
+Todas las llamadas a `api.prysmid.com` incluyen:
+
+```
+X-RateLimit-Limit:     60
+X-RateLimit-Remaining: 47
+X-RateLimit-Reset:     1738000060
+```
+
+Cuando agotás:
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 12
+```
+
+`Retry-After` en segundos. Esperá y reintentá.
+
+## Estrategia recomendada
+
+**Para apps server-side**:
+1. Cacheá responses cuando podés (lista de workspaces, IdPs configurados — cambian poco).
+2. Backoff exponencial al primer 429: 1s, 2s, 4s, 8s, max 30s.
+3. Jitter random ±20% para no thundering-herd con otros clientes tuyos.
+
+**Para agentes**:
+El MCP server hace backoff y deduping automático. Si tu agente hace una sucesión de calls "lista workspaces, lee uno, vuelve a listar", solo el primer list pega; el segundo viene de cache de 5s.
+
+**Para batch operations**:
+Si necesitás crear 50 tenants de un golpe, el camino correcto es la **batch API** (`POST /v1/workspaces/$WS/tenants:batch` con array de payloads). No N llamadas en paralelo. La batch API tiene un límite distinto (5 batches/min × hasta 100 items cada uno = 500 creaciones/min sin tocar rate limit).
+
+## Subir el límite
+
+**Pro**: el default es suficiente para 99% de los workspaces. Si genuinamente necesitás más, escribinos con tu use case.
+**Enterprise**: parte del contrato. Hablás con sales y dejás el número que necesitás.
+
+## Lo que NO está rate-limited
+
+- **Healthchecks** (`api.prysmid.com/healthz`).
+- **OIDC discovery** (`auth.<slug>.prysmid.com/.well-known/openid-configuration`).
+- **JWKS** (`auth.<slug>.prysmid.com/oauth/v2/keys`) — Cloudflare lo cachea agresivamente.
+- **Static assets** del dashboard (cacheados en CF Pages).
+
+## Webhook deliveries — política específica
+
+Si tu endpoint responde lento (>10s) o no-2xx, vamos a reintentar con backoff (1m, 5m, 30m, 2h, 6h, 12h, 24h, 48h). Después de 48h damos por permanently failed.
+
+Si tu endpoint falla >5% del tráfico durante 30 minutos, te mandamos email a los owners del workspace. Si sigue caído >24h, **pausamos** las entregas (no las eventos — quedan encolados) hasta que reactives manualmente desde el dashboard. Esto protege tu BE durante incidentes.

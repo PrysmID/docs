@@ -1,0 +1,99 @@
+/* Prysm:ID — Design Tokens
+ * Derivados de branding/brand_guidelines.md v1.1
+ * Si hay desalineación entre este archivo y el manual, el manual gana.
+ */
+
+:root {
+  /* Spectrum (espectro de refracción) */
+  --prysmid-ultra: #4B2FD6;
+  --prysmid-azure: #2F6BD6;
+  --prysmid-cyan:  #2FC6D6;
+  --prysmid-amber: #D6A62F;
+  --prysmid-coral: #D6452F;
+
+  /* Brand primary (alias de Ultra) */
+  --prysmid-violet: var(--prysmid-ultra);
+
+  /* Neutros warm-neutral */
+  --prysmid-ink-900: #0B0B14;
+  --prysmid-ink-800: #141420;
+  --prysmid-ink-700: #1F1F30;
+  --prysmid-ink-500: #4A4A60;
+  --prysmid-ink-300: #9898A8;
+  --prysmid-paper-100: #EDECF2;
+  --prysmid-paper-300: #D5D4DE;
+  --prysmid-paper-500: #9FA0B0;
+  --prysmid-paper-900: #F7F6FB;
+
+  /* Semánticos */
+  --prysmid-success: #2FA86E;
+  --prysmid-warning: var(--prysmid-amber);
+  --prysmid-danger:  var(--prysmid-coral);
+  --prysmid-info:    var(--prysmid-azure);
+
+  /* Gradiente canónico (refracción) */
+  --prysmid-spectrum: linear-gradient(
+    92deg,
+    var(--prysmid-ultra) 0%,
+    var(--prysmid-azure) 22%,
+    var(--prysmid-cyan)  44%,
+    var(--prysmid-amber) 72%,
+    var(--prysmid-coral) 100%
+  );
+
+  /* Tipografía */
+  --prysmid-font-display: "Inter", "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --prysmid-font-mono:    "JetBrains Mono", "JetBrains Mono Variable", "Fira Code", "SF Mono", Consolas, monospace;
+
+  /* Espaciado (multiples de 4) */
+  --prysmid-space-1: 4px;
+  --prysmid-space-2: 8px;
+  --prysmid-space-3: 12px;
+  --prysmid-space-4: 16px;
+  --prysmid-space-6: 24px;
+  --prysmid-space-8: 32px;
+  --prysmid-space-12: 48px;
+  --prysmid-space-16: 64px;
+  --prysmid-space-24: 96px;
+  --prysmid-space-32: 128px;
+
+  /* Radios */
+  --prysmid-radius-input: 4px;
+  --prysmid-radius-card:  8px;
+  --prysmid-radius-modal: 12px;
+  --prysmid-radius-hero:  16px;
+  --prysmid-radius-illus: 24px;
+
+  /* Motion */
+  --prysmid-ease:   cubic-bezier(0.22, 1, 0.36, 1);
+  --prysmid-ease-io: cubic-bezier(0.83, 0, 0.17, 1);
+  --prysmid-dur-micro: 120ms;
+  --prysmid-dur-ui:    240ms;
+  --prysmid-dur-page:  480ms;
+
+  /* Sombras (violet glow, no negro) */
+  --prysmid-shadow-1: 0 4px 12px rgba(75, 47, 214, 0.10);
+  --prysmid-shadow-2: 0 8px 32px rgba(75, 47, 214, 0.14);
+  --prysmid-shadow-3: 0 24px 64px rgba(75, 47, 214, 0.18);
+}
+
+/* Modos de color */
+[data-theme="dark"] {
+  --prysmid-bg:        var(--prysmid-ink-900);
+  --prysmid-bg-elev:   var(--prysmid-ink-800);
+  --prysmid-bg-hover:  var(--prysmid-ink-700);
+  --prysmid-fg:        var(--prysmid-paper-900);
+  --prysmid-fg-mute:   var(--prysmid-ink-300);
+  --prysmid-fg-dim:    var(--prysmid-ink-500);
+  --prysmid-border:    var(--prysmid-ink-700);
+}
+
+[data-theme="light"] {
+  --prysmid-bg:        var(--prysmid-paper-900);
+  --prysmid-bg-elev:   #FFFFFF;
+  --prysmid-bg-hover:  var(--prysmid-paper-100);
+  --prysmid-fg:        var(--prysmid-ink-900);
+  --prysmid-fg-mute:   var(--prysmid-ink-500);
+  --prysmid-fg-dim:    var(--prysmid-paper-500);
+  --prysmid-border:    var(--prysmid-paper-100);
+}

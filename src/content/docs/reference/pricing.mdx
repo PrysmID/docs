@@ -1,0 +1,103 @@
+---
+title: Pricing
+description: Free, Pro, Enterprise. Lo que está incluido, lo que cuesta, sin asteriscos escondidos.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## La regla
+
+**Un precio. Sin addons. Sin sorpresas.**
+
+| | Free | Pro | Enterprise |
+|---|---|---|---|
+| **Costo** | $0/mes | **$29/mes** + $0.02 por MAU sobre 100k | Contact sales |
+| **MAU incluidos** | 10,000 | 100,000 | Negotiable |
+| **Workspaces** | 1 instance | Unlimited instances | Unlimited |
+| **OAuth apps** | 5 | Unlimited | Unlimited |
+| **Tenants por workspace** | 5 | Unlimited | Unlimited |
+| **IdPs sociales** (Google, GitHub, Microsoft) | ✅ | ✅ | ✅ |
+| **SAML SSO** | — | ✅ | ✅ |
+| **SCIM provisioning** | — | — | ✅ |
+| **Custom domain** | — | ✅ (1) | ✅ (unlimited) |
+| **Custom CSS** | — | ✅ | ✅ |
+| **Quitar footer "Powered by Prysm:ID"** | — | ✅ | ✅ |
+| **Webhooks** | 1 endpoint | Unlimited | Unlimited |
+| **MCP server** | ✅ | ✅ | ✅ |
+| **Audit log retention** | 30 días | 90 días | 1 año |
+| **Soporte** | Community (GitHub, Discord) | Email, business hours | Dedicado, SLA negociable |
+| **SLA uptime** | Best effort | 99.9% | Negotiable |
+| **DPA** | — | Bajo request | Estándar |
+| **Custom contract** | — | — | ✅ |
+
+## Cómo se calcula el overage de Pro
+
+**MAU** = usuarios distintos que se autenticaron al menos una vez en el período facturado actual. El período es mensual, anclado al día de tu primer pago Pro.
+
+```
+Si terminás el período con 130,000 MAU:
+  100,000 incluidos en el flat ($29)
+  30,000 excedentes × $0.02 = $600 de overage
+
+Total facturable: $29 + $600 = $629
+```
+
+**Spending cap**: configurable. Cuando la proyección cruzaría el cap, bloqueamos signups nuevos. Tu factura nunca pasa el cap. [Cómo setearlo →](/dashboard/billing/#spending-cap)
+
+## Por qué $29 y no $0/$5/$99 como otros
+
+**No competimos en free generoso.** 10k MAU es deliberado. Si necesitás más de eso, generalmente ya estás monetizando — pasar a Pro es razonable.
+
+**$29/mes refleja costo real.** Cada workspace tuyo es una instance Zitadel dedicada. Sostener una instance ociosa cuesta. $29 alinea precio con costo, no con "el precio que la gente paga sin pensar".
+
+**$0.02 por MAU sobre 100k es debajo del mercado.** Auth0 cobra $0.025 + cargos por add-ons. Clerk cobra $0.02 *si* hacés contrato anual. WorkOS cobra $125 por conexión SSO. Nuestros números son flat y públicos.
+
+**Sin cargos por SSO/SAML en Enterprise.** WorkOS construyó un negocio entero cobrando $125 por conexión. Lo decimos: nos parece predatorio cuando el costo marginal es near-zero. Enterprise tiene SSO incluido sin cargo por conexión.
+
+## Comparativo honesto
+
+| Eje | Prysm:ID | Clerk | Auth0 | WorkOS |
+|---|---|---|---|---|
+| Free MAU | 10k | 10k | 7.5k | — |
+| Cost a 50k MAU/mes | $29 | $25-100 | $130-240 | n/a (no MAU model) |
+| Cost a 200k MAU/mes | $29 + $2,000 = $2,029 | $400-2,000 | $930-1,300 | n/a |
+| Cost de SSO en Enterprise | Incluido | $$$ | Add-on | $125/conn |
+| Multi-tenant físico | ✅ | ❌ | Parcial | ❌ |
+| Self-host real path | ✅ (Zitadel OSS) | ❌ | ❌ | ❌ |
+| MCP oficial | ✅ | ❌ | ❌ | ❌ |
+| Soporte español/LATAM nativo | ✅ | ❌ | ❌ | ❌ |
+| UI de login más pulida | No | **✅** | Parcial | Sí |
+
+<Aside type="tip">
+**Donde no ganamos no decimos que ganamos.** Clerk tiene mejor UI de login out-of-the-box. Auth0 tiene madurez de compliance enterprise más profunda. Si esos ejes son críticos para vos, probablemente no somos la mejor opción — y está bien decirlo.
+</Aside>
+
+## Preguntas que recibimos
+
+**¿Cobran por workspace o por developer?**
+Por workspace. Tu equipo entero accede al mismo workspace sin cargos extra.
+
+**¿Cobran por usuario admin?**
+No. Los miembros del workspace (los humanos del *tu* equipo en `app.prysmid.com`) son ilimitados en todos los planes.
+
+**¿Hay descuento anual?**
+En Pro no (es flat barato). En Enterprise sí, negociable.
+
+**¿Aceptan invoice / wire transfer?**
+Pro: solo tarjeta vía Stripe. Enterprise: invoice + wire disponible.
+
+**¿LATAM tax?**
+Sí, IVA aplicable se incluye en la factura según país (Stripe lo maneja).
+
+**¿Qué pasa si dejo de pagar?**
+14 días de grace `past_due`, después `suspended` (login para users desactivado). Recoverable: pagás y vuelve. Los datos no se borran hasta los 90 días tras `suspended`.
+
+**¿Refunds?**
+Sin refund automático. En cancelaciones, cancel-at-period-end (seguís usando hasta el fin del período pago). Para casos especiales, hablar con soporte.
+
+## Plan changes
+
+- **Free → Pro**: [Upgrade en dashboard](/dashboard/billing/), prorateado desde el día.
+- **Pro → Free**: Schedule at period end. Sin reembolso del período actual. Cancelable hasta el día anterior.
+- **Pro → Enterprise**: Hablás con sales, migración manual.
+- **Enterprise → Pro**: A negociar contractualmente.

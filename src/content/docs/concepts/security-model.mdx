@@ -1,0 +1,79 @@
+---
+title: Modelo de seguridad
+description: Aislamiento, encryption, audit, key rotation y portabilidad. Lo que tu auditor quiere saber.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Esta página existe para que cuando tu cliente enterprise te audite, tengas algo que pegar en la respuesta sin tener que escribir desde cero. Está organizada por las preguntas que efectivamente nos hacen.
+
+## Aislamiento
+
+**¿Comparten una base de datos con otros tenants?**
+No. Cada workspace tiene su propia instance Zitadel con su propio schema en Postgres. No hay tabla compartida cross-workspace excepto el plano de control (billing, audit del propio Prysm:ID), que no contiene PII de tus usuarios finales.
+
+**¿Hay un network path entre instances?**
+Las instances no se hablan entre ellas. Una instance no puede consultar otra, ni siquiera por error de configuración: viven en VPCs / namespaces separados.
+
+**¿Qué pasa si vulneran el plano de control?**
+El plano de control puede orquestar workspaces (crear, suspender, leer config) pero no puede leer credenciales de tus usuarios finales. Las contraseñas viven hasheadas (bcrypt) en la instance Zitadel del workspace, jamás salen de ahí.
+
+## Encryption
+
+**At rest**: Postgres con encryption AES-256 a nivel de volume (gp3 EBS encrypted). Snapshots y backups también encriptados.
+
+**In transit**: TLS 1.3 obligatorio en todos los endpoints públicos (`auth.*.prysmid.com`, `api.prysmid.com`, `app.prysmid.com`). El plano de control habla con la instance Zitadel por TLS interna también; no hay tráfico plain en ningún hop.
+
+**Application-level**: las credenciales de service account de Zitadel que el plano de control necesita guardar para operar tu instance están **encriptadas con Fernet** antes de persistirse. La key de encryption vive solo en SSM Parameter Store (no en código, no en backups de DB sin más).
+
+## Keys y firma de tokens
+
+Cada instance Zitadel tiene su propio key store. Los `id_token` y `access_token` se firman con **RS256** por default. Las keys públicas se exponen vía JWKS en `https://auth.<slug>.prysmid.com/oauth/v2/keys`.
+
+**Rotation**: Zitadel rota las keys de firma automáticamente. La key vieja queda activa para validación durante un período de gracia. Tu cliente debe seguir el JWKS dinámicamente, no cachear una key fija (la mayoría de las librerías OIDC lo hacen bien por default).
+
+## Audit
+
+**Quién hace qué en tu instance**: el audit log nativo de Zitadel registra cada evento (signup, login, logout, password change, IdP linking, role grant, app registration). Lo accedés vía la admin API de Zitadel desde tu instance, o vía dashboard en `app.prysmid.com → audit`.
+
+**Quién toca el plano de control**: tenemos un audit log separado para acciones administrativas en `app.prysmid.com` (qué miembro del workspace cambió qué). Visible desde el dashboard.
+
+**Retention**: 90 días en plan Pro, 1 año en Enterprise. Plan Free, 30 días.
+
+## Portabilidad — el "exit plan"
+
+Esta es la diferencia estructural con Clerk / Auth0 / WorkOS, así que se documenta en serio.
+
+Si querés irte de Prysm:ID hoy, lo hacés:
+
+1. **Export**. Andá a **Settings → Export** del workspace. Descargás:
+   - Dump completo de tu instance Zitadel (formato Zitadel oficial: usuarios, IdPs, projects, apps, roles, branding).
+   - Spec OpenAPI de los endpoints OIDC que tu app consume (no cambian — son OIDC estándar).
+   - SQL dump de Postgres si querés validar bit-a-bit (Enterprise).
+
+2. **Levantar Zitadel propio**. [Docs oficiales de Zitadel](https://zitadel.com/docs/self-hosting/deploy) — cualquier server con Postgres sirve. La operación realista son días, no meses.
+
+3. **Importar el dump**. `zitadel admin import <dump>`. Usuarios, IdPs, apps, todo se restaura.
+
+4. **Apuntar tu DNS**. `auth.acme.prysmid.com` lo apuntás vos (CNAME al server tuyo) o cambiás el issuer en tu app. Tus tokens emitidos antes siguen válidos hasta expirar.
+
+5. **Cancelás Prysm:ID**. Borrás el workspace desde el dashboard. La instance se elimina; los backups se purgan a 90 días.
+
+<Aside type="tip">
+Esto no es un pitch — el comando para empezar es real: `zitadel admin export`. Probalo en un workspace de prueba antes de necesitarlo.
+</Aside>
+
+## Compliance
+
+| Estándar | Estado |
+|---|---|
+| SOC 2 Type II | En proceso (target: Q3 2026). |
+| LGPD | Cumplido (procesador, contrato disponible). Workspaces dedicados ayudan a la postura. |
+| Habeas Data (Argentina, Colombia) | Cumplido. |
+| GDPR | Cumplido (procesador). DPA disponible bajo Enterprise. |
+| HIPAA | No (fuera de scope hoy). |
+| PCI-DSS | No procesamos tarjetas — Stripe lo hace. |
+
+## Reportá vulnerabilidades
+
+`security@prysmid.com` o key PGP en `https://prysmid.com/.well-known/security.txt`. Acuse de recibo en 24h. Bug bounty pendiente, manejamos disclosure responsable case-by-case mientras tanto.

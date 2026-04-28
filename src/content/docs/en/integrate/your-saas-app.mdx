@@ -1,0 +1,131 @@
+---
+title: Integrate Prysm:ID into your B2B SaaS
+description: The dominant use case. How to model workspaces, tenants and users when you sell software to other companies.
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+If what you sell is a B2B app where **each of your customers needs its own login** (with their own IdPs, their own branding, their own users), this is the guide. The model is simple once you accept it:
+
+> You are a Prysm:ID **workspace**. Each of your customers is a **tenant** inside your workspace.
+
+## The map
+
+```
+Your Prysm:ID workspace
+└── auth.<your_slug>.prysmid.com    (one Zitadel instance)
+    ├── tenant: Acme Corp (your customer)
+    │   ├── users: alice@acme, bob@acme
+    │   ├── their own IdP: Acme SSO (Okta, Azure AD, Google Workspace)
+    │   └── their own branding: Acme logo
+    ├── tenant: Globex (your customer)
+    │   ├── users: …
+    │   ├── their own IdP: Google Workspace
+    │   └── their own branding: Globex logo
+    └── tenant: …
+```
+
+One Zitadel instance, N tenants inside. **Isolation happens at the workspace level** (between you and other Prysm:ID customers), not between your tenants. Your tenants share *your* infrastructure — that's fine and expected, just like any B2B SaaS.
+
+## Practical steps
+
+<Steps>
+
+1. **Create a tenant when a new customer signs.**
+
+   Use the API or the MCP server. Via API:
+
+   ```bash
+   curl -X POST https://api.prysmid.com/v1/workspaces/$WS/tenants \
+     -H "Authorization: Bearer $YOUR_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"slug": "acme-corp", "display_name": "Acme Corporation"}'
+   ```
+
+   Returns a `tenant_id`. Persist it in *your* DB, attached to the customer row.
+
+2. **Map your users to the tenant.**
+
+   When an Acme Corp user signs up, two things happen:
+
+   - Your app knows that user belongs to tenant `acme-corp` (came from a specific signup link, or resolved by email domain, etc.).
+   - When you redirect them to login, you pass `tenant_id` as a query param or subdomain (mode of your choice — see [routing](#routing)).
+
+3. **Validate tokens with the tenant in mind.**
+
+   The `id_token` you receive includes claims telling you which tenant the user belongs to:
+
+   ```json
+   {
+     "sub": "294857...",
+     "urn:zitadel:iam:user:resourceowner:id": "tenant_acme_corp_id",
+     ...
+   }
+   ```
+
+   In your backend, verify the `resourceowner` matches the tenant the user is trying to access. If Bob from Acme tries to log into a Globex URL, reject.
+
+</Steps>
+
+## Routing
+
+Three ways to "tell" Prysm:ID which tenant the user belongs to:
+
+**1. Subdomain per customer** (recommended for enterprise).
+`acme.yourapp.com → your app knows tenant=acme`. Your app passes `tenant_id` when starting the OIDC flow. Login UI shows Acme's branding.
+
+**2. Path per customer** (recommended for self-serve).
+`yourapp.com/c/acme → same thing`. Operationally simpler than custom subdomain.
+
+**3. Email domain** (recommended for mixed mode).
+User enters email; your app resolves `@acme.com → tenant=acme`; redirect to login with that hint. Stripe does this.
+
+<Aside type="tip">
+You don't have to pick one. Most B2B SaaS end up using subdomain for enterprise and path for self-serve. Prysm:ID doesn't impose — you decide how to inject `tenant_id` into the flow.
+</Aside>
+
+## Suggested data model in your app
+
+```sql
+CREATE TABLE customer (
+  id                  uuid PRIMARY KEY,
+  display_name        text,
+  prysmid_tenant_id   text NOT NULL,  -- id returned by the API on create
+  ...
+);
+
+CREATE TABLE app_user (
+  id                  uuid PRIMARY KEY,
+  customer_id         uuid REFERENCES customer(id),
+  prysmid_user_sub    text NOT NULL,  -- `sub` from the id_token
+  email               text,
+  ...
+);
+
+CREATE UNIQUE INDEX ON app_user (prysmid_user_sub);
+```
+
+The keys are the **`prysmid_tenant_id`** column on `customer` and **`prysmid_user_sub`** on `app_user`. Those are your glue against Prysm:ID. Everything else is yours.
+
+## Account linking
+
+If a user from Acme Corp is also a user from Globex (same email, two of your customers), they'll have **two accounts** in Prysm:ID — one per tenant. This is intentional: isolation.
+
+In your app, if you want to offer "switch tenant" without re-login, you handle two independent sessions. Libraries like `next-auth`, `omniauth`, or equivalent, support concurrent providers.
+
+## Self-serve onboarding (when a customer signs up alone)
+
+Typical pattern:
+
+1. Your landing has a signup form. User fills email + company name.
+2. Your BE: creates customer in *your* DB, creates tenant in Prysm:ID via API, returns link to `auth.your_slug.prysmid.com/...?tenant_hint=...`.
+3. User completes signup in Prysm:ID's login UI (default branding, or the tenant's once it's configured).
+4. Webhook `user.created` arrives; you persist the `sub` into `app_user`.
+
+[See full webhook handler example →](/en/integrate/webhooks/)
+
+## What's next
+
+- [Validate JWTs in your backend](/en/integrate/jwt-validation/) — implementation with jose, PyJWT, jose-go.
+- [Custom branding](/en/integrate/custom-branding/) — so each tenant's login looks like your brand or your customer's.
+- [Webhooks](/en/integrate/webhooks/) — react to signups, logins, changes.

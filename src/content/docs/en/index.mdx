@@ -1,0 +1,88 @@
+---
+title: Prysm:ID Docs
+description: B2B multi-tenant auth, open foundation, agent-native. Your identity layer, unlocked. Forever.
+template: splash
+hero:
+  tagline: Identity, refracted. B2B multi-tenant auth with no lock-in and a native MCP server. Built in LATAM.
+  image:
+    alt: Prysm:ID
+    file: ../../../assets/wordmark.svg
+  actions:
+    - text: Start in 5 minutes
+      link: /en/quickstart/
+      icon: right-arrow
+      variant: primary
+    - text: Connect your agent with Claude
+      link: /en/agents/quickstart-claude/
+      icon: external
+      variant: secondary
+    - text: See pricing
+      link: /en/reference/pricing/
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<div class="spectrum-bar"></div>
+
+## Three ways to read these docs
+
+Prysm:ID serves three readers with distinct needs. Pick your path:
+
+<CardGrid stagger>
+  <LinkCard
+    title="You're integrating Prysm:ID into your SaaS"
+    description="You're a developer. You want each of your customers to have their own login. Start with the Integrate guide."
+    href="/en/integrate/your-saas-app/"
+  />
+  <LinkCard
+    title="You're building with an AI agent"
+    description="You're connecting Claude/GPT to Prysm:ID via MCP. Your agent creates workspaces, registers apps, configures IdPs."
+    href="/en/agents/"
+  />
+  <LinkCard
+    title="You're an admin of a workspace"
+    description="You already have a workspace. You want to invite users, connect Google, brand the login."
+    href="/en/dashboard/"
+  />
+</CardGrid>
+
+## What is Prysm:ID
+
+A **B2B multi-tenant auth** platform built on [Zitadel](https://zitadel.com), open source and self-hostable. Each of your customers lives in **their own Zitadel instance** — physical isolation, not logical. When your enterprise customer audits you, the answer is clean.
+
+Unlike Clerk or Auth0:
+
+- **You can leave any time.** Export your directory, point your DNS elsewhere, run Zitadel yourself. The foundation is Apache 2.0.
+- **Predictable pricing.** $29/month up to 100k MAU, $0.02/MAU beyond. SSO/SCIM included in Enterprise with no per-connection fees.
+- **Native physical multi-tenancy.** Each of your customers gets their own instance. Not "logical orgs" in a shared database.
+- **Official MCP.** Your AI agent can create workspaces, register apps, configure IdPs through natural language.
+
+[Read the full architecture model →](/en/concepts/architecture/)
+
+## Why AI-first matters
+
+> Your agent can build you auth. Or it can integrate Prysm:ID in 30 seconds and save you from maintaining it.
+
+Any agent with your credentials can implement social login in an afternoon. What it doesn't tell you is that it's writing — inside your app — a mini Prysm:ID: OAuth callbacks, sessions, refresh tokens, account linking, recovery, audit logs, multi-tenant when you need it. That code is now **yours**: you maintain it when Google rotates a scope, when your first enterprise customer asks for SAML, when passkeys land, when audit asks for SOC2.
+
+With Prysm:ID, that code doesn't exist in your repo — it's an API call. The same agent that was going to build it integrates it in 30 seconds via MCP. **Same speed on day 1, zero technical debt on day 400.**
+
+[Start with Claude →](/en/agents/quickstart-claude/)
+
+## Most-read
+
+<CardGrid>
+  <LinkCard title="Quickstart" href="/en/quickstart/" description="Zero to first login in 5 minutes." />
+  <LinkCard title="Architecture model" href="/en/concepts/architecture/" description="Why physical multi-tenancy, not logical." />
+  <LinkCard title="Validate JWTs in your backend" href="/en/integrate/jwt-validation/" description="Verify tokens issued by Prysm:ID." />
+  <LinkCard title="Custom branding" href="/en/integrate/custom-branding/" description="Logo, colors, custom domain for the login." />
+  <LinkCard title="Webhooks" href="/en/integrate/webhooks/" description="React to signups, logins, plan changes." />
+  <LinkCard title="MCP server tools" href="/en/agents/tools/" description="Catalog of operations available to agents." />
+</CardGrid>
+
+## The promise
+
+> **Your identity layer, unlocked. Forever.**
+
+What comes in as complexity goes out as an ordered spectrum. And the foundation — Zitadel, Apache 2.0 — stays portable forever. If Prysm:ID disappears tomorrow, Zitadel is still there, and your DNS points wherever you choose.

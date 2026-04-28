@@ -1,0 +1,103 @@
+---
+title: Pricing
+description: Free, Pro, Enterprise. What's included, what it costs, no hidden asterisks.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## The rule
+
+**One price. No add-ons. No surprises.**
+
+| | Free | Pro | Enterprise |
+|---|---|---|---|
+| **Cost** | $0/month | **$29/month** + $0.02 per MAU above 100k | Contact sales |
+| **MAU included** | 10,000 | 100,000 | Negotiable |
+| **Workspaces** | 1 instance | Unlimited instances | Unlimited |
+| **OAuth apps** | 5 | Unlimited | Unlimited |
+| **Tenants per workspace** | 5 | Unlimited | Unlimited |
+| **Social IdPs** (Google, GitHub, Microsoft) | ✅ | ✅ | ✅ |
+| **SAML SSO** | — | ✅ | ✅ |
+| **SCIM provisioning** | — | — | ✅ |
+| **Custom domain** | — | ✅ (1) | ✅ (unlimited) |
+| **Custom CSS** | — | ✅ | ✅ |
+| **Remove "Powered by Prysm:ID" footer** | — | ✅ | ✅ |
+| **Webhooks** | 1 endpoint | Unlimited | Unlimited |
+| **MCP server** | ✅ | ✅ | ✅ |
+| **Audit log retention** | 30 days | 90 days | 1 year |
+| **Support** | Community (GitHub, Discord) | Email, business hours | Dedicated, negotiable SLA |
+| **Uptime SLA** | Best effort | 99.9% | Negotiable |
+| **DPA** | — | On request | Standard |
+| **Custom contract** | — | — | ✅ |
+
+## How Pro overage is calculated
+
+**MAU** = distinct users who authenticated at least once in the current billing period. The period is monthly, anchored on the day of your first Pro payment.
+
+```
+If you end the period with 130,000 MAU:
+  100,000 included in the flat ($29)
+  30,000 above × $0.02 = $600 overage
+
+Total billable: $29 + $600 = $629
+```
+
+**Spending cap**: configurable. When projection would cross the cap, we block new signups. Your bill never goes above the cap. [How to set it →](/en/dashboard/billing/#spending-cap)
+
+## Why $29 and not $0/$5/$99 like others
+
+**We don't compete on generous free.** 10k MAU is deliberate. If you need more, you're usually monetizing — moving to Pro is reasonable.
+
+**$29/month reflects real cost.** Each workspace is a dedicated Zitadel instance. Sustaining an idle instance costs. $29 aligns price with cost, not with "the price people pay without thinking".
+
+**$0.02 per MAU above 100k is below market.** Auth0 charges $0.025 + add-on fees. Clerk charges $0.02 *if* you commit annually. WorkOS charges $125 per SSO connection. Our numbers are flat and public.
+
+**No SSO/SAML fees on Enterprise.** WorkOS built a whole business charging $125 per connection. We're saying it: that feels predatory when marginal cost is near-zero. Enterprise has SSO included with no per-connection fee.
+
+## Honest comparison
+
+| Axis | Prysm:ID | Clerk | Auth0 | WorkOS |
+|---|---|---|---|---|
+| Free MAU | 10k | 10k | 7.5k | — |
+| Cost at 50k MAU/mo | $29 | $25-100 | $130-240 | n/a (no MAU model) |
+| Cost at 200k MAU/mo | $29 + $2,000 = $2,029 | $400-2,000 | $930-1,300 | n/a |
+| SSO cost on Enterprise | Included | $$$ | Add-on | $125/conn |
+| Physical multi-tenancy | ✅ | ❌ | Partial | ❌ |
+| Real self-host path | ✅ (Zitadel OSS) | ❌ | ❌ | ❌ |
+| Official MCP | ✅ | ❌ | ❌ | ❌ |
+| Native Spanish/LATAM support | ✅ | ❌ | ❌ | ❌ |
+| Polished login UI out-of-box | No | **✅** | Partial | Yes |
+
+<Aside type="tip">
+**Where we don't win we don't say we win.** Clerk has better out-of-box login UI. Auth0 has deeper enterprise compliance maturity. If those axes are critical for you, we're probably not the best fit — and it's fine to say so.
+</Aside>
+
+## Questions we get
+
+**Do you charge per workspace or per developer?**
+Per workspace. Your whole team accesses the same workspace at no extra cost.
+
+**Do you charge for admin users?**
+No. Workspace members (the humans on *your* team in `app.prysmid.com`) are unlimited on all plans.
+
+**Annual discount?**
+On Pro no (it's flat cheap). On Enterprise yes, negotiable.
+
+**Do you accept invoice / wire transfer?**
+Pro: card via Stripe only. Enterprise: invoice + wire available.
+
+**LATAM tax?**
+Yes, applicable VAT included on the invoice per country (Stripe handles it).
+
+**What if I stop paying?**
+14 days `past_due` grace, then `suspended` (user login disabled). Recoverable: pay and it's back. Data is not deleted until 90 days after `suspended`.
+
+**Refunds?**
+No automatic refund. On cancellation, cancel-at-period-end (you keep using until period end). For special cases, talk to support.
+
+## Plan changes
+
+- **Free → Pro**: [Upgrade in dashboard](/en/dashboard/billing/), prorated from the day.
+- **Pro → Free**: Schedule at period end. No refund for current period. Cancelable up to the day before.
+- **Pro → Enterprise**: Talk to sales, manual migration.
+- **Enterprise → Pro**: Negotiated contractually.

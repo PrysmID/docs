@@ -1,0 +1,51 @@
+---
+title: Changelog
+description: What changed and when. API versioning + material product changes.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+We log material changes here — the ones that affect your integration or dashboard. Patches and minor bug fixes don't enter this log; they live in GitHub releases.
+
+## API v1 — current
+
+### 2026-04-28
+- **Stripe metered → MeterEvent migration**. Overage metering now uses `stripe.billing.MeterEvent.create` instead of the legacy `SubscriptionItem.create_usage_record`. No visible changes in your integration; upgrades work as before but use the modern meter API.
+- **Webhook handler hardening**. Fix on StripeObject projection that affected `dict()` on some Python/SDK combos. Stripe webhooks that were failing 500 now process cleanly.
+- **`docs.prysmid.com` launched**. This page exists.
+- **`app.prysmid.com/` redirects to `/app`**. Used to serve raw JSON — now bounces to login. One less confusion.
+
+### 2026-04-26
+- **Phase 16.4 — Onboarding wizard**. Inline banner on the workspace detail screen to guide first setup.
+- **Hallazgo #74**. Dashboard header link no longer points to a JSON.
+
+### 2026-04-25
+- **Phase 16.3 — Stripe checkout E2E**. Full Free → Pro flow functional. Customer Portal pinned at `bpc_*` (cancel-only, no plan switch via portal).
+- **SubscriptionSchedule pattern for downgrades**. Pro → Free schedules at period end with no refund, instead of immediate cancel.
+
+### 2026-04-23
+- **Phase 16.2 — Self-serve signup**. OAuth Google + GitHub enabled for signup at `app.prysmid.com`. Workspace `prysmid-hq` created.
+
+### 2026-04-15
+- **Phase 16.1 — Landing `prysmid.com` live**.
+
+## API v0 → v1 (future)
+
+We're on `v1`. When we have breaking changes (field moves, semantic changes), `v2` will ship with at least 90 days notice and `v1` maintained for 12 months.
+
+Considering for `v2`:
+- Naming consistency on some endpoints (`workspace_id` vs `workspaceId` — today we mix per area).
+- Cursor-based pagination instead of offset-based for large listings.
+- New error format with structured details (we'll keep backward-compat).
+
+If a future change affects you, we say so before — not after.
+
+## RSS / subscription
+
+There's an RSS feed at [docs.prysmid.com/changelog.xml](https://docs.prysmid.com/changelog.xml) (TODO — pending Astro RSS plugin integration).
+
+Meanwhile, watch the docs repo at [GitHub](https://github.com/PrysmID/docs). Every change to this file is a commit.
+
+<Aside type="tip">
+**If an integration breaks without warning**, write us. Means something landed as breaking without us flagging it — bug in our process, not in your code.
+</Aside>

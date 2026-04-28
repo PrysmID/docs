@@ -1,0 +1,160 @@
+---
+title: Quickstart
+description: Zero to first login in 5 minutes. Signup, workspace, first OAuth app, and a user signing in.
+---
+
+import { Steps, Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+This guide takes you from **no account** to **a user signed into your app** in five minutes. After that you fork into three paths: integrate it seriously into your SaaS, hand it to an agent, or keep admin-ing from the dashboard.
+
+<Aside type="note">
+You'll need: a Google or GitHub account for signup, any domain for your test OAuth client (`localhost` works), and two minutes of patience while your Zitadel instance provisions.
+</Aside>
+
+## The walkthrough
+
+<Steps>
+
+1. **Sign up at `app.prysmid.com`.**
+
+   Head to [app.prysmid.com](https://app.prysmid.com) and sign in with Google or GitHub. No card asked — the Free plan never expires and covers 10k MAU.
+
+2. **Create your first workspace.**
+
+   After your first login we ask for a slug (e.g. `acme`). That slug becomes `auth.acme.prysmid.com` — the domain where your users will sign in. Provisioning takes 60-90 seconds: we spin up a dedicated Zitadel instance for your workspace, configure OIDC, default branding, and SMTP.
+
+   <Aside type="tip">
+   The slug is immutable. Pick something that represents your product, not your team. `acme` over `acme-team-prod`.
+   </Aside>
+
+3. **Register your first OAuth app.**
+
+   In your workspace dashboard, go to **Apps → New app**. It asks for:
+
+   - **Name**: `My SaaS dev`
+   - **Redirect URIs**: `http://localhost:3000/auth/callback` (for local dev) — you can add more later
+   - **Type**: Web (server-side) or SPA (browser)
+
+   You get a `client_id` (public) and a `client_secret` (shown once — copy it).
+
+4. **Wire your local app.**
+
+   Your app talks to Prysm:ID over standard OIDC. Endpoints:
+
+   ```
+   Issuer:        https://auth.acme.prysmid.com
+   Authorization: https://auth.acme.prysmid.com/oauth/v2/authorize
+   Token:         https://auth.acme.prysmid.com/oauth/v2/token
+   UserInfo:      https://auth.acme.prysmid.com/oidc/v1/userinfo
+   JWKS:          https://auth.acme.prysmid.com/oauth/v2/keys
+   ```
+
+   Any decent OIDC library works. Examples:
+
+   <Tabs syncKey="lang">
+   <TabItem label="Node.js">
+   ```js
+   import { Issuer } from 'openid-client';
+
+   const issuer = await Issuer.discover('https://auth.acme.prysmid.com');
+   const client = new issuer.Client({
+     client_id: process.env.PRYSMID_CLIENT_ID,
+     client_secret: process.env.PRYSMID_CLIENT_SECRET,
+     redirect_uris: ['http://localhost:3000/auth/callback'],
+     response_types: ['code'],
+   });
+   ```
+   </TabItem>
+   <TabItem label="Python">
+   ```python
+   from authlib.integrations.starlette_client import OAuth
+
+   oauth = OAuth()
+   oauth.register(
+       name='prysmid',
+       server_metadata_url='https://auth.acme.prysmid.com/.well-known/openid-configuration',
+       client_id=os.environ['PRYSMID_CLIENT_ID'],
+       client_secret=os.environ['PRYSMID_CLIENT_SECRET'],
+       client_kwargs={'scope': 'openid profile email'},
+   )
+   ```
+   </TabItem>
+   <TabItem label="Go">
+   ```go
+   import "github.com/coreos/go-oidc/v3/oidc"
+   import "golang.org/x/oauth2"
+
+   provider, _ := oidc.NewProvider(ctx, "https://auth.acme.prysmid.com")
+   conf := &oauth2.Config{
+       ClientID:     os.Getenv("PRYSMID_CLIENT_ID"),
+       ClientSecret: os.Getenv("PRYSMID_CLIENT_SECRET"),
+       RedirectURL:  "http://localhost:3000/auth/callback",
+       Endpoint:     provider.Endpoint(),
+       Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
+   }
+   ```
+   </TabItem>
+   <TabItem label="cURL">
+   ```bash
+   # 1. Redirect your user to:
+   AUTH_URL="https://auth.acme.prysmid.com/oauth/v2/authorize"
+   echo "$AUTH_URL?client_id=$PRYSMID_CLIENT_ID&redirect_uri=http://localhost:3000/auth/callback&response_type=code&scope=openid%20profile%20email"
+
+   # 2. On callback, exchange `code` for tokens:
+   curl -X POST https://auth.acme.prysmid.com/oauth/v2/token \
+     -u "$PRYSMID_CLIENT_ID:$PRYSMID_CLIENT_SECRET" \
+     -d "grant_type=authorization_code" \
+     -d "code=$AUTH_CODE" \
+     -d "redirect_uri=http://localhost:3000/auth/callback"
+   ```
+   </TabItem>
+   </Tabs>
+
+5. **Try the login.**
+
+   Run your local app and hit your login flow. Your app redirects to `auth.acme.prysmid.com`, the user enters email + password (or signs up), and comes back to your callback with an `authorization_code`. Exchange it for a JWT `id_token` carrying `sub`, `email`, `name`.
+
+   That `sub` is the stable user identifier in your workspace. Store it alongside your user record.
+
+</Steps>
+
+## What's next
+
+Three directions depending on what you want to deepen:
+
+<CardGrid>
+  <LinkCard
+    title="Model your multi-tenant SaaS"
+    href="/en/integrate/your-saas-app/"
+    description="Each of your customers, their own Prysm:ID workspace. How to model it."
+  />
+  <LinkCard
+    title="Validate JWTs in your backend"
+    href="/en/integrate/jwt-validation/"
+    description="Verify signature, audience, expiration. JWKS rotation."
+  />
+  <LinkCard
+    title="Connect Google / GitHub / Microsoft"
+    href="/en/dashboard/idps/"
+    description="So your users can use their corporate IdPs."
+  />
+  <LinkCard
+    title="Drive all this with an agent"
+    href="/en/agents/quickstart-claude/"
+    description="MCP server: have Claude register apps for you."
+  />
+</CardGrid>
+
+## Troubleshooting
+
+**The workspace stays in `provisioning` for more than 5 minutes.**
+Something failed during provision (Cloudflare DNS, Zitadel instance, EmBoux SMTP). Go to **Settings → Status** on the workspace to see where it stalled. If you stay blocked, write us — the state is recoverable without losing the slug.
+
+**My app says `redirect_uri_mismatch`.**
+The exact URI you send in authorize must match one registered under **Apps → your app → Redirect URIs**. Trailing slashes count.
+
+**The `id_token` comes back without `email`.**
+Request the `email` scope on top of `openid profile`. Some libraries only request `openid` by default.
+
+**I need to self-host this.**
+You can. Prysm:ID is managed Zitadel; export your instance with `zitadel admin export` and stand it up yourself. See [Security model & portability](/en/concepts/security-model/).

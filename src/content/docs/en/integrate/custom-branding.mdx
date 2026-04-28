@@ -1,0 +1,94 @@
+---
+title: Custom branding
+description: Logo, colors, custom domain for the login. Per workspace and per tenant.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The login is the first screen *your customers' users* see. Making it look like your brand (or, if your customer is enterprise, like theirs) matters. Prysm:ID exposes three levels of customization:
+
+1. **Workspace branding** — affects every login of your product. By default after signup, your workspace already has "Powered by Prysm:ID" branding (Free) or "your logo" branding (Pro).
+2. **Tenant branding** — partial overrides applied only when the user arrives with `tenant_hint`. Each of your customers can have their own logo and colors.
+3. **Custom domain** — `auth.acme.com` instead of `auth.your-slug.prysmid.com`. Pro+.
+
+## What you can customize
+
+| | Workspace | Tenant override | Custom domain |
+|---|---|---|---|
+| Logo | ✅ | ✅ | — |
+| Primary colors | ✅ | ✅ | — |
+| Login background (color or image) | ✅ | ✅ | — |
+| Favicon | ✅ | — | — |
+| "Powered by Prysm:ID" footer | Removable on Pro+ | — | — |
+| Custom CSS | ✅ Pro+ | ✅ Pro+ | — |
+| Login URL | `auth.<slug>.prysmid.com` | same | `auth.<your-domain>` |
+
+## Configure workspace branding
+
+**Via dashboard**: `app.prysmid.com → settings → branding`. Upload PNG/SVG, pick two hex colors, preview, save. Changes live in the workspace's Zitadel instance and apply to the next session.
+
+**Via API**:
+
+```bash
+curl -X PUT https://api.prysmid.com/v1/workspaces/$WS/branding \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "logo=@./logo.svg" \
+  -F "primary_color=#4B2FD6" \
+  -F "background_color=#0B0B14"
+```
+
+**Via MCP**: ask your agent "upload the logo from `~/Downloads/acme-logo.png` to workspace acme and set primary to #FF6B6B". The agent calls the `branding.set` tool which calls the same API.
+
+## Tenant overrides
+
+When an enterprise customer asks "the login should show *our* logo, not yours", configure a per-tenant override:
+
+```bash
+curl -X PUT https://api.prysmid.com/v1/workspaces/$WS/tenants/$TENANT/branding \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "logo=@./acme-logo.svg" \
+  -F "primary_color=#003B71"
+```
+
+These overrides apply **only** when the OIDC flow comes with `tenant_hint=$TENANT`. Without a hint, the workspace branding wins.
+
+## Custom domain (Pro+)
+
+By default your instance lives at `auth.<slug>.prysmid.com`. If you want the login to appear under *your* domain (`auth.yourapp.com` or, for enterprise, `auth.acme.com`), follow this:
+
+1. **Dashboard → Settings → Custom domain**. Enter `auth.yourapp.com`.
+2. We give you a CNAME value to point from your DNS towards `<workspace>.prysmid.cloud`.
+3. When we detect propagation (1-15 min depending on TTL), we issue a TLS cert via Let's Encrypt.
+4. Status flips to `active`. Your app starts using `auth.yourapp.com` as the issuer.
+
+<Aside type="caution">
+Changing the issuer is a careful operation: already-issued `id_token`s reference the old `iss`. Recommended strategy: change the issuer during a maintenance window, or accept both issuers in your validator for 24-48h.
+</Aside>
+
+## Custom CSS (Pro+)
+
+If palette + logo isn't enough, inject additional CSS. Lives in `branding.custom_css`. Limits:
+
+- No JavaScript (Zitadel blocks it for security).
+- Max size: 64 KB.
+- No external asset loading (no `@import` of remote fonts; you have to host them).
+
+```css
+/* Example: custom typography */
+@font-face {
+  font-family: 'AcmeSans';
+  src: url('https://acme.com/fonts/acme-sans.woff2') format('woff2');
+}
+body { font-family: 'AcmeSans', system-ui; }
+```
+
+## Remove the "Powered by Prysm:ID" footer
+
+On Free: the footer appears and can't be hidden. Part of the plan trade.
+On Pro+: at `Settings → Branding → Show Prysm:ID footer` toggle off. Your customer never knows you're running Prysm:ID underneath (except if they inspect the `prysmid.com` subdomain — which custom domain solves).
+
+## What you can't customize (and why)
+
+- **Login copy**: e.g. you can't change "Sign in to your account" via dashboard (yet). Custom copy is a per-workspace feature flag; ask support.
+- **Form layout**: email/password fields are fixed. For radically different layouts, consider putting your own UI in front of Prysm:ID and consuming only the OIDC endpoints.
+- **Social IdP icons**: Google is Google's, GitHub is GitHub's. Each provider's brand rules require it.

@@ -1,0 +1,171 @@
+/* Prysm:ID Docs — Starlight theme overrides
+ *
+ * Bridges Starlight's CSS variables to the brand tokens defined in
+ * branding/tokens.css. The brand manual (§8.4) is the contract:
+ *   - light mode default (long-form reading)
+ *   - dark toggle available
+ *   - sidebar fija + TOC derecho + content max-width 720px
+ *   - callouts: Info (Azure), Warning (Amber), Danger (Coral), Success (verde)
+ *   - typography: Inter for prose, JetBrains Mono for code
+ *
+ * Anything that drifts from §8.4 is a bug, not a preference.
+ */
+
+/* ---------- 1. Default theme: light --------------------------------------- */
+/* Brand §8.4 explicitly overrides the project-wide dark-first stance (§7.1.2)
+ * for docs because long-form reading benefits from light. Starlight's default
+ * is dark; flip it to light here. The toggle is in the header for users who
+ * prefer dark — both modes must look brand-correct. */
+:root {
+  color-scheme: light dark;
+}
+:root[data-theme='light']:root {
+  color-scheme: light;
+}
+
+/* ---------- 2. Wire Starlight tokens to Prysm:ID brand tokens -------------- */
+/* Starlight uses --sl-color-* internally; brand tokens come from
+ * branding/tokens.css. We map them so Starlight components automatically pick
+ * up brand colors without component overrides. */
+
+:root {
+  /* Typography */
+  --sl-font: var(--prysmid-font-display);
+  --sl-font-system: var(--prysmid-font-display);
+  --sl-font-system-mono: var(--prysmid-font-mono);
+
+  /* Sizing per brand §8.4: content max-width 720px, sidebar fixed */
+  --sl-content-width: 45rem; /* ~720px */
+  --sl-sidebar-width: 18.5rem;
+  --sl-sidebar-pad-x: 1rem;
+
+  /* Spacing scale aligned to brand 4px multiples */
+  --sl-text-h1: 2.25rem;
+  --sl-text-h2: 1.5rem;
+  --sl-text-h3: 1.25rem;
+  --sl-line-height-headings: 1.2;
+}
+
+/* Light theme — brand 'paper' family */
+:root[data-theme='light'] {
+  --sl-color-bg: var(--prysmid-paper-900);
+  --sl-color-bg-nav: #ffffff;
+  --sl-color-bg-sidebar: var(--prysmid-paper-900);
+  --sl-color-bg-inline-code: var(--prysmid-paper-100);
+  --sl-color-bg-accent: var(--prysmid-ultra);
+
+  --sl-color-text: var(--prysmid-ink-900);
+  --sl-color-text-accent: var(--prysmid-ultra);
+  --sl-color-text-invert: #ffffff;
+
+  --sl-color-hairline: var(--prysmid-paper-100);
+  --sl-color-hairline-light: var(--prysmid-paper-100);
+  --sl-color-hairline-shade: var(--prysmid-paper-300);
+
+  --sl-color-accent: var(--prysmid-ultra);
+  --sl-color-accent-low: rgba(75, 47, 214, 0.08);
+  --sl-color-accent-high: var(--prysmid-ultra);
+
+  --sl-color-gray-1: var(--prysmid-ink-900);
+  --sl-color-gray-2: var(--prysmid-ink-700);
+  --sl-color-gray-3: var(--prysmid-ink-500);
+  --sl-color-gray-4: var(--prysmid-paper-500);
+  --sl-color-gray-5: var(--prysmid-paper-300);
+  --sl-color-gray-6: var(--prysmid-paper-100);
+  --sl-color-gray-7: #ffffff;
+}
+
+/* Dark theme — brand 'ink' family */
+:root[data-theme='dark'] {
+  --sl-color-bg: var(--prysmid-ink-900);
+  --sl-color-bg-nav: var(--prysmid-ink-800);
+  --sl-color-bg-sidebar: var(--prysmid-ink-900);
+  --sl-color-bg-inline-code: var(--prysmid-ink-700);
+  --sl-color-bg-accent: var(--prysmid-ultra);
+
+  --sl-color-text: var(--prysmid-paper-900);
+  --sl-color-text-accent: #b39dff; /* lifted Ultra for dark legibility */
+  --sl-color-text-invert: var(--prysmid-ink-900);
+
+  --sl-color-hairline: var(--prysmid-ink-700);
+  --sl-color-hairline-light: var(--prysmid-ink-700);
+  --sl-color-hairline-shade: var(--prysmid-ink-500);
+
+  --sl-color-accent: #b39dff;
+  --sl-color-accent-low: rgba(75, 47, 214, 0.18);
+  --sl-color-accent-high: #b39dff;
+
+  --sl-color-gray-1: var(--prysmid-paper-900);
+  --sl-color-gray-2: var(--prysmid-paper-100);
+  --sl-color-gray-3: var(--prysmid-ink-300);
+  --sl-color-gray-4: var(--prysmid-ink-500);
+  --sl-color-gray-5: var(--prysmid-ink-700);
+  --sl-color-gray-6: var(--prysmid-ink-800);
+  --sl-color-gray-7: var(--prysmid-ink-900);
+}
+
+/* ---------- 3. Callouts (asides) — brand §8.4 colors ---------------------- */
+/* Starlight's <Aside> renders as `.starlight-aside.starlight-aside--<variant>`.
+ * Map each variant to brand semantic colors (Info=Azure, Warning=Amber,
+ * Danger=Coral, Success=verde). Border-left 3px + radius 8px + padding 16px
+ * exactly per the manual. */
+
+.starlight-aside {
+  border-radius: var(--prysmid-radius-card);
+  border-left-width: 3px;
+  padding: var(--prysmid-space-4);
+}
+.starlight-aside--note,
+.starlight-aside--tip {
+  border-left-color: var(--prysmid-info);
+  background: rgba(47, 107, 214, 0.06);
+}
+.starlight-aside--caution {
+  border-left-color: var(--prysmid-warning);
+  background: rgba(214, 166, 47, 0.08);
+}
+.starlight-aside--danger {
+  border-left-color: var(--prysmid-danger);
+  background: rgba(214, 69, 47, 0.06);
+}
+
+/* ---------- 4. Code blocks — JetBrains Mono + spectrum highlight ---------- */
+.expressive-code {
+  --ec-frm-edBg: var(--sl-color-bg-inline-code);
+  --ec-frm-edActTabBg: var(--sl-color-bg-nav);
+  --ec-codeFontFml: var(--prysmid-font-mono);
+}
+
+/* ---------- 5. Hero gradient — landing-style headers in MDX --------------- */
+/* Reusable utility class for the few pages that want to evoke the brand
+ * spectrum (home, agents/index). Use sparingly — brand §7.1.1 says "the
+ * spectrum is the hero, everything else is neutral and functional". */
+.spectrum-bar {
+  height: 4px;
+  background: var(--prysmid-spectrum);
+  border-radius: 2px;
+  margin: var(--prysmid-space-4) 0 var(--prysmid-space-8);
+}
+.spectrum-text {
+  background: var(--prysmid-spectrum);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- 6. Headings — slightly tighter tracking per brand §7.x -------- */
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: -0.015em;
+}
+.sl-markdown-content h1 {
+  font-weight: 600;
+}
+
+/* ---------- 7. Sidebar nav — subtle dividers --------------------------- */
+.sidebar-content nav > ul > li > details > summary,
+.sidebar-content nav > ul > li > a {
+  font-weight: 600;
+}

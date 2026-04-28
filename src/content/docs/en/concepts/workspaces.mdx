@@ -1,0 +1,62 @@
+---
+title: Workspaces
+description: The basic unit of the model. One workspace = one of your accounts = one Zitadel instance.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A **workspace** is the account unit of Prysm:ID. It's what you create when you sign up. Each workspace has:
+
+- An immutable **slug** (`acme`).
+- An **auth domain** (`auth.acme.prysmid.com`).
+- A **dedicated Zitadel instance**.
+- A **plan** (Free / Pro / Enterprise).
+- An **owner** (the human account that created it).
+- A set of **members** with roles.
+
+A workspace is meant to represent **one SaaS product of yours**. If you have multiple independent products, you have multiple workspaces. If you have one product with many B2B customers, you have *one* workspace and *many tenants inside it*.
+
+## Workspace states
+
+| State | What it means |
+|---|---|
+| `provisioning` | We just created the workspace. We're standing up the Zitadel instance, configuring DNS, getting everything ready. Takes 60-90s. |
+| `active` | Ready for use. Login, dashboard, API, MCP — all available. |
+| `past_due` | A payment failed. The instance stays active but the dashboard shows a banner. If unresolved in 14 days, transitions to `suspended`. |
+| `suspended` | Payment unresolved. End-user login *disabled*; the data plane returns 503. Recoverable: pay and it returns to `active`. |
+| `failed_provisioning` | Something failed at create (DNS, Zitadel, SMTP). Recoverable without losing the slug; write us. |
+
+## Members and roles
+
+Each workspace has **members** (human accounts with dashboard access). Initial roles:
+
+- **Owner** — the workspace creator. Not removable. Only one who can delete the workspace or transfer ownership.
+- **Admin** — everything except delete workspace or transfer.
+- **Developer** — register/edit apps, view audit logs, cannot invite members or change billing.
+- **Billing** — billing and plan changes only, no access to auth config.
+
+<Aside type="note">
+Workspace members are **human accounts on `app.prysmid.com`** (Prysm:ID's HQ), not end users. End users live inside the workspace's Zitadel instance and are distinct.
+</Aside>
+
+## Plan and MAU
+
+The plan sets workspace limits. See [pricing](/en/reference/pricing/) for the full table. The essentials:
+
+- **MAU = Monthly Active Users**: distinct users who authenticated at least once in the current billing period. We measure via the workspace's Zitadel audit log.
+- On Pro, the first 100k MAU are included in the flat. Above that, $0.02 per MAU.
+- You can set a **spending cap**. If projected overage would cross the cap, we block new signups until next period. We never bill above your cap, but existing users keep logging in.
+
+## Available operations
+
+Every dashboard operation has API and MCP counterparts. Core workspace operations:
+
+- Create / read / delete
+- List members / invite / remove / change role
+- Change plan / set spending cap / open Stripe Customer Portal
+- List registered apps / create / delete
+- List configured IdPs / add / remove
+- Edit branding (logo, colors, custom domain)
+- Webhooks: create, list, rotate secret
+
+See [/en/reference/api](/en/reference/api/) for the full spec, or [/en/agents/tools](/en/agents/tools/) for the MCP catalog.

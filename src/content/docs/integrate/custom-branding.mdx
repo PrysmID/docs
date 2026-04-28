@@ -1,0 +1,94 @@
+---
+title: Custom branding
+description: Logo, colores, dominio propio para el login. Por workspace y por tenant.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+El login es la primera pantalla que ven *los usuarios de tus clientes*. Que se vea como tu marca (o, si tu cliente es enterprise, como la suya) es importante. Prysm:ID expone tres niveles de personalización:
+
+1. **Branding del workspace** — afecta todos los logins de tu producto. Por default después del signup, tu workspace ya tiene branding "Prysm:ID powered" (en plan Free) o "tu logo" (en plan Pro).
+2. **Branding del tenant** — overrides parciales que aplican solo cuando el usuario llega con `tenant_hint`. Cada cliente tuyo puede tener logo y colores propios.
+3. **Custom domain** — `auth.acme.com` en vez de `auth.tu-slug.prysmid.com`. Plan Pro+.
+
+## Lo que se puede customizar
+
+| | Workspace | Tenant override | Custom domain |
+|---|---|---|---|
+| Logo | ✅ | ✅ | — |
+| Colores primarios | ✅ | ✅ | — |
+| Background del login (color o imagen) | ✅ | ✅ | — |
+| Favicon | ✅ | — | — |
+| Footer "Powered by Prysm:ID" | Quitable en Pro+ | — | — |
+| Custom CSS | ✅ Pro+ | ✅ Pro+ | — |
+| URL del login | `auth.<slug>.prysmid.com` | igual | `auth.<tu-dominio>` |
+
+## Configurar branding del workspace
+
+**Vía dashboard**: `app.prysmid.com → settings → branding`. Subís un PNG/SVG, elegís dos colores hex, previsualizás, guardás. Los cambios viven en la instance Zitadel del workspace y aplican a la próxima sesión.
+
+**Vía API**:
+
+```bash
+curl -X PUT https://api.prysmid.com/v1/workspaces/$WS/branding \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "logo=@./logo.svg" \
+  -F "primary_color=#4B2FD6" \
+  -F "background_color=#0B0B14"
+```
+
+**Vía MCP**: pedile a tu agente "subí el logo de `~/Downloads/acme-logo.png` al workspace acme y pintá el primary con #FF6B6B". El agente llama al tool `branding.set` que llama a la misma API.
+
+## Tenant overrides
+
+Cuando un cliente tuyo enterprise pide "que el login tenga *nuestro* logo, no el tuyo", configurás un override por tenant:
+
+```bash
+curl -X PUT https://api.prysmid.com/v1/workspaces/$WS/tenants/$TENANT/branding \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "logo=@./acme-logo.svg" \
+  -F "primary_color=#003B71"
+```
+
+Esos overrides aplican **solo** cuando el flow OIDC viene con `tenant_hint=$TENANT`. Para usuarios sin hint, gana el branding del workspace.
+
+## Custom domain (Pro+)
+
+Por default tu instance vive en `auth.<slug>.prysmid.com`. Si querés que el login se vea bajo *tu* dominio (`auth.tuapp.com` o, en enterprise, `auth.acme.com`), seguís esto:
+
+1. **Dashboard → Settings → Custom domain**. Ingresás `auth.tuapp.com`.
+2. Te damos un valor CNAME que apuntás desde tu DNS hacia `<workspace>.prysmid.cloud`.
+3. Cuando detectamos la propagación (1-15 min según TTL), emitimos cert TLS via Let's Encrypt.
+4. Estado pasa a `active`. Tu app empieza a usar `auth.tuapp.com` como issuer.
+
+<Aside type="caution">
+Cambiar el issuer es una operación con cuidado: los `id_token` ya emitidos referencian el viejo `iss`. Estrategia recomendada: cambiar el issuer durante una ventana de mantenimiento, o aceptar ambos issuers en tu validador durante 24-48h.
+</Aside>
+
+## Custom CSS (Pro+)
+
+Si la paleta + logo no te alcanza, podés inyectar CSS adicional. Vive en `branding.custom_css`. Limitaciones:
+
+- No JavaScript (Zitadel lo bloquea por seguridad).
+- Tamaño max: 64 KB.
+- No carga de assets externos (sin `@import` de fuentes externas; tenés que hostearlas vos).
+
+```css
+/* Ejemplo: tipografía custom */
+@font-face {
+  font-family: 'AcmeSans';
+  src: url('https://acme.com/fonts/acme-sans.woff2') format('woff2');
+}
+body { font-family: 'AcmeSans', system-ui; }
+```
+
+## Quitar el footer "Powered by Prysm:ID"
+
+En plan Free: el footer aparece y no se puede ocultar. Es parte del trade del plan.
+En plan Pro+: en `Settings → Branding → Show Prysm:ID footer` toggle off. El cliente nunca sabe que estás corriendo Prysm:ID por debajo (excepto si inspecciona el subdomain `prysmid.com`, que se resuelve con custom domain).
+
+## Lo que no se puede customizar (y por qué)
+
+- **Texto de login**: por ejemplo, no podés cambiar "Sign in to your account" a "Acceso autorizado" *vía dashboard* (todavía). Texto custom es feature flag por workspace; pedilo a soporte.
+- **Layout del form**: los campos email/password son fijos. Para layouts radicalmente distintos, considerá llevar tu propia UI delante de Prysm:ID y consumir solo los endpoints OIDC.
+- **Icons de IdPs sociales**: Google es el de Google, GitHub el de GitHub. Branding rules de cada provider lo exigen.

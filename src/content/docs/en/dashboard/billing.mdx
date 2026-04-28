@@ -1,0 +1,84 @@
+---
+title: Billing
+description: Plan, spending cap, MAU usage, invoices. Stripe Customer Portal.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`Dashboard → Billing`. Four sections: **Current plan**, **Spending cap**, **MAU usage** (Pro+), **Invoices**.
+
+## Current plan
+
+Card with:
+
+- Current plan (Free / Pro / Enterprise) and status badge (`active`, `incomplete`, `past_due`).
+- **"Upgrade to Pro"** or **"Current plan"** button as appropriate.
+- **"Switch to Free at period end"** button (if on Pro): scheduled downgrade.
+- **"Manage in Stripe"** button: opens the Stripe Customer Portal. We configure it cancel-only, no plan change, no automatic refunds. The reason is operational ([more on blog](/en/) — TODO link).
+
+### Upgrade Free → Pro
+
+Click **Upgrade to Pro** → takes you to Stripe Checkout → enter card → return. The plan flips to Pro. The first month is prorated from the upgrade day.
+
+### Downgrade Pro → Free
+
+**Not** instant. Click "Switch to Free at period end". Confirm. A blue banner appears: "Plan change scheduled — switching to Free on YYYY-MM-DD" (the date is the end of your current billing period). Until that day you keep all Pro benefits. No refund for the current period.
+
+If you change your mind: "Cancel scheduled change" in the banner. Back to Pro indefinitely.
+
+## Spending cap
+
+Only applies on Pro. Sets the maximum USD overage you accept to pay per period. When projection would cross the cap, **we block new signups** until next period.
+
+```
+spending cap = $200/month
+
+current MAU: 95,000
+projected EOP: 110,000
+projected overage: (110k - 100k) × $0.02 = $200
+→ at cap. New signups: BLOCKED.
+Existing users: keep logging in normally.
+```
+
+**Pass `null` (empty) for "unlimited"** — we accept any overage. Recommended only if you have external alarms warning you about cost.
+
+## MAU usage (Pro+)
+
+Chart showing daily MAU for the current period. Horizontal line at 100,000 (included in plan). What crosses above is billable overage.
+
+Below the chart:
+
+- **Current period MAU**: the counter.
+- **Projected EOP MAU**: linear extrapolation of current growth.
+- **Projected overage**: $0.02 × (projected MAU - 100k).
+
+Refreshed daily, data comes from your Zitadel instance audit log.
+
+## Invoices
+
+Paginated list of Stripe invoices with:
+
+- Date, amount, state (paid / open / failed).
+- "View / download PDF" link (served by Stripe).
+
+For deeper billing questions (change card, see payment method, billing address), click "Manage in Stripe" up top — the Stripe Customer Portal handles all of that.
+
+## Problem states
+
+**`incomplete`**: first Pro payment failed. You have 24h to retry before the subscription cancels. Click "Retry payment" or change card.
+
+**`past_due`**: a renewal failed. You have 14 days to fix it before the workspace transitions to `suspended`. A yellow banner shows how many days remain.
+
+**`suspended`**: payment unresolved. Login for your end users **disabled**. Recoverable: pay (link in red banner) and it returns to `active`.
+
+<Aside type="tip">
+Configure `subscription.past_due` as a webhook event to find out programmatically before a human sees the banner. [Webhooks →](/en/integrate/webhooks/)
+</Aside>
+
+## Cancel the workspace
+
+If you want to close the whole account (not just downgrade):
+
+`Settings → Danger zone → Delete workspace`. We ask you to type the slug to confirm. We delete the Zitadel instance, the DNS, the data. Backups purge in 90 days.
+
+Before that you can export everything: see [/concepts/security-model #portability →](/en/concepts/security-model/#portability--the-exit-plan).

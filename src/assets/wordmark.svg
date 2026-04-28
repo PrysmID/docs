@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 64" role="img" aria-label="Prysm:ID">
+  <title>Prysm:ID — Wordmark</title>
+  <desc>Wordmark canónico de Prysm:ID. Inter 600, P y ID mayúsculas, ID en gradiente espectral horizontal calibrado al área tipográfica real del bloque, colon en violeta brand. La lectura :ID como emoticón sonriente es emergente y deliberada.</desc>
+  <defs>
+    <!--
+      Gradiente userSpaceOnUse calibrado al rango x donde Inter 600 @ 56px
+      con letter-spacing=-1.4 renderiza el bloque "ID":
+      - "Prysm:" termina en x ≈ 169
+      - "ID" se extiende hasta x ≈ 216
+      Overdraw de 5 px a cada lado para tolerar variaciones de render.
+    -->
+    <linearGradient id="prysmid-spec" gradientUnits="userSpaceOnUse" x1="165" y1="0" x2="220" y2="0">
+      <stop offset="0" stop-color="#4B2FD6"/>
+      <stop offset="0.25" stop-color="#2F6BD6"/>
+      <stop offset="0.5" stop-color="#2FC6D6"/>
+      <stop offset="0.75" stop-color="#D6A62F"/>
+      <stop offset="1" stop-color="#D6452F"/>
+    </linearGradient>
+  </defs>
+  <text x="0" y="48"
+        font-family="Inter, system-ui, -apple-system, 'Segoe UI', sans-serif"
+        font-size="56" font-weight="600"
+        letter-spacing="-1.4"
+        fill="currentColor">Prysm<tspan fill="#4B2FD6">:</tspan><tspan fill="url(#prysmid-spec)">ID</tspan></text>
+</svg>

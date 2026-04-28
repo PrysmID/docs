@@ -1,0 +1,42 @@
+---
+title: Dashboard
+description: Si recién entraste a app.prysmid.com, esta es tu guía. Todo lo administrativo del workspace en un lugar.
+---
+
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+El dashboard de Prysm:ID vive en [`app.prysmid.com`](https://app.prysmid.com). Es donde hacés todo lo administrativo del workspace sin código: invitar miembros del equipo, registrar OAuth apps, conectar IdPs sociales, brandear el login, ver audit log, manejar billing.
+
+Cada página tiene su contraparte vía API y vía MCP — esta sección documenta el camino UI. Si preferís código, andá a [/integrate](/integrate/your-saas-app/) o [/agents/tools](/agents/tools/).
+
+## Layout
+
+- **Sidebar izquierdo**: workspaces tuyos. Click en uno para entrar.
+- **Tabs por workspace** (Overview, Apps, Users, IdPs, Branding, Billing, Audit, Settings).
+- **Top right**: tu avatar + selector de tema (light/dark).
+
+## Páginas de esta sección
+
+<CardGrid>
+  <LinkCard title="Tu primer workspace" href="/dashboard/first-workspace/" description="Qué se aprovisiona durante los 60-90s post-signup, qué hacer cuando termina." />
+  <LinkCard title="Conectar IdPs" href="/dashboard/idps/" description="Google, GitHub, Microsoft, SAML — paso a paso." />
+  <LinkCard title="Branding del login" href="/dashboard/branding/" description="Logo, colores, custom domain. Cómo previsualizar antes de aplicar." />
+  <LinkCard title="Billing" href="/dashboard/billing/" description="Plan, spending cap, MAU usage, invoices. Stripe Customer Portal." />
+</CardGrid>
+
+## Lo que NO está en el dashboard (todavía)
+
+- **Crear / editar usuarios end-user** del workspace. Los usuarios se crean por OIDC signup en *tu* app, no acá. Soporte de admin de users vive en la API y MCP por ahora; UI llega en 2026 Q3.
+- **SAML SSO config UI**: hoy se hace por API/MCP; UI dedicada en roadmap.
+- **Métricas de uso fine-grained**: dashboard tiene contadores básicos; analytics avanzado vía export del audit log.
+
+## Atajos de teclado
+
+| Tecla | Hace |
+|---|---|
+| `g` `o` | Ir a Overview del workspace activo |
+| `g` `a` | Apps |
+| `g` `i` | IdPs |
+| `g` `b` | Billing |
+| `?` | Mostrar atajos |
+| `cmd+k` / `ctrl+k` | Búsqueda global |

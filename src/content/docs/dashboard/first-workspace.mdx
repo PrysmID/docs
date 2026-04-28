@@ -1,0 +1,47 @@
+---
+title: Tu primer workspace
+description: Qué pasa durante los 60-90s post-signup. Qué hacer cuando termina la provisión.
+---
+
+Después de tu primer login en `app.prysmid.com`, te pedimos:
+
+1. **Slug del workspace** (ej: `acme`). Inmutable. Lo elegís pensando en *tu producto*, no en tu equipo.
+2. **Plan inicial** (Free por default; podés saltar a Pro acá o después).
+
+Click "Crear" y arranca la provisión. Los siguientes 60-90 segundos hacemos:
+
+| Paso | Tarda | Qué hace |
+|---|---|---|
+| Reservar slug | `<1s` | Verificar que `acme` no esté en uso. |
+| Crear DNS | 5-10s | `auth.acme.prysmid.com` → CNAME a la instance. Cloudflare Records API. |
+| Provisionar Zitadel | 30-60s | Levantar instance dedicada, schema Postgres, JWKS keys. |
+| Configurar SMTP | 5-10s | Conectar la instance al EmBoux (servicio de email transaccional). |
+| Branding default | `<1s` | Logo "Powered by Prysm:ID" + paleta default. |
+| Cert TLS | 10-30s | Let's Encrypt para `auth.acme.prysmid.com`. |
+| Healthcheck | `<5s` | Validar que el endpoint OIDC responde. |
+| Marcar `active` | `<1s` | Listo. |
+
+Mientras se provisiona vas a ver una pantalla con un **stepper en vivo** mostrando cuál de esos pasos está corriendo. No tenés que esperar mirando — podés cerrar la pestaña y volver. Cuando termina, te llega un email "Tu workspace está listo".
+
+## Si la provisión falla
+
+A veces falla — generalmente por DNS de Cloudflare lento, instance Zitadel con cold start largo, o SMTP de EmBoux con quota. Cuando pasa, el workspace queda en `failed_provisioning` con un detalle del paso que falló:
+
+- **Recoverable**: click "Retry provisioning" en la pantalla de error. El slug se conserva.
+- **Si re-intenta y vuelve a fallar**: escribinos a soporte. Casi siempre es config de cuenta nueva (cuotas iniciales) que resolvemos manualmente.
+
+## Después de `active`
+
+Tres cosas hacer en orden:
+
+1. **Registrar tu primera app OAuth.** [Quickstart paso 3](/quickstart/#el-recorrido). Te da `client_id` y `client_secret` para tu código.
+2. **Invitar a tu equipo.** Settings → Members → Invite. Mandales un link, completan signup en `app.prysmid.com` y entran al workspace.
+3. **Conectar al menos un IdP social** ([Google](/dashboard/idps/) es el primer reflejo). Si no lo configurás, tus usuarios solo pueden registrarse con email + password — perfectamente válido pero menor conversión.
+
+## Después de eso
+
+Depende de tu producto:
+
+- Si vendés B2B con clientes enterprise → leé [/integrate/your-saas-app](/integrate/your-saas-app/) y modelá tenants antes de tener clientes reales.
+- Si tu producto va con su propio agente de IA → conectá Claude vía MCP y dejalo configurar el resto.
+- Si el plan a 6 meses es un upgrade a Pro → marcá [/reference/pricing](/reference/pricing/) y configurá tu spending cap antes de cruzar 100k MAU.

@@ -1,0 +1,42 @@
+---
+title: Dashboard
+description: If you just landed on app.prysmid.com, this is your guide. Everything admin-related about the workspace in one place.
+---
+
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+The Prysm:ID dashboard lives at [`app.prysmid.com`](https://app.prysmid.com). It's where you do everything admin without code: invite team members, register OAuth apps, connect social IdPs, brand the login, view audit log, manage billing.
+
+Every page has its counterpart via API and via MCP — this section documents the UI path. If you prefer code, head to [/integrate](/en/integrate/your-saas-app/) or [/agents/tools](/en/agents/tools/).
+
+## Layout
+
+- **Left sidebar**: your workspaces. Click one to enter.
+- **Tabs per workspace** (Overview, Apps, Users, IdPs, Branding, Billing, Audit, Settings).
+- **Top right**: your avatar + theme switcher (light/dark).
+
+## Pages in this section
+
+<CardGrid>
+  <LinkCard title="Your first workspace" href="/en/dashboard/first-workspace/" description="What gets provisioned during the 60-90s post-signup, what to do when it finishes." />
+  <LinkCard title="Connect IdPs" href="/en/dashboard/idps/" description="Google, GitHub, Microsoft, SAML — step by step." />
+  <LinkCard title="Login branding" href="/en/dashboard/branding/" description="Logo, colors, custom domain. How to preview before applying." />
+  <LinkCard title="Billing" href="/en/dashboard/billing/" description="Plan, spending cap, MAU usage, invoices. Stripe Customer Portal." />
+</CardGrid>
+
+## What's NOT in the dashboard (yet)
+
+- **Create / edit end-user accounts** of the workspace. Users are created via OIDC signup in *your* app, not here. Admin user-management lives in API and MCP for now; UI lands 2026 Q3.
+- **SAML SSO config UI**: today via API/MCP; dedicated UI on the roadmap.
+- **Fine-grained usage metrics**: dashboard has basic counters; advanced analytics via audit log export.
+
+## Keyboard shortcuts
+
+| Key | Does |
+|---|---|
+| `g` `o` | Go to active workspace's Overview |
+| `g` `a` | Apps |
+| `g` `i` | IdPs |
+| `g` `b` | Billing |
+| `?` | Show shortcuts |
+| `cmd+k` / `ctrl+k` | Global search |

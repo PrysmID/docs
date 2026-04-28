@@ -1,0 +1,88 @@
+---
+title: Prysm:ID Docs
+description: Auth B2B multi-tenant, open foundation, agent-native. Tu capa de identidad, siempre en tus manos.
+template: splash
+hero:
+  tagline: Identidad, refractada. Auth B2B multi-tenant sin lock-in, con MCP nativo. Hecho desde LATAM.
+  image:
+    alt: Prysm:ID
+    file: ../../assets/wordmark.svg
+  actions:
+    - text: Empezá en 5 minutos
+      link: /quickstart/
+      icon: right-arrow
+      variant: primary
+    - text: Conectá tu agente con Claude
+      link: /agents/quickstart-claude/
+      icon: external
+      variant: secondary
+    - text: Ver pricing
+      link: /reference/pricing/
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<div class="spectrum-bar"></div>
+
+## Tres maneras de leer estas docs
+
+Prysm:ID atiende tres lectores con necesidades distintas. Encontrá tu camino:
+
+<CardGrid stagger>
+  <LinkCard
+    title="Estás integrando Prysm:ID en tu SaaS"
+    description="Sos developer. Querés que tus clientes tengan su propio login. Empezá por la guía Integrar."
+    href="/integrate/your-saas-app/"
+  />
+  <LinkCard
+    title="Estás construyendo con un agente de IA"
+    description="Conectás Claude/GPT a Prysm:ID por MCP. Tu agente crea workspaces, registra apps, configura IdPs."
+    href="/agents/"
+  />
+  <LinkCard
+    title="Sos admin de un workspace"
+    description="Ya tenés un workspace creado. Querés invitar usuarios, conectar Google, brandear el login."
+    href="/dashboard/"
+  />
+</CardGrid>
+
+## Qué es Prysm:ID
+
+Una plataforma de **auth B2B multi-tenant** construida sobre [Zitadel](https://zitadel.com), open source y self-hostable. Cada uno de tus clientes vive en **su propia instance de Zitadel** — aislamiento físico, no lógico. Cuando tu cliente enterprise te audite, la respuesta es limpia.
+
+A diferencia de Clerk o Auth0:
+
+- **Si querés irte, podés.** Exportás tu directorio, apuntás tu DNS a otro lado, levantás Zitadel vos. La base es Apache 2.0.
+- **Pricing predecible.** $29/mes hasta 100k MAU, $0.02/MAU sobre eso. SSO/SCIM incluido en Enterprise sin cargo por conexión.
+- **Multi-tenant nativo físico.** Cada cliente tuyo recibe su propia instance. No "orgs lógicas" en una base compartida.
+- **MCP oficial.** Tu agente de IA puede crear workspaces, registrar apps, configurar IdPs por lenguaje natural.
+
+[Leé el modelo de arquitectura completo →](/concepts/architecture/)
+
+## Por qué AI-first importa
+
+> Tu agente puede construirte auth. O puede integrarte Prysm:ID en 30 segundos y ahorrarte mantenerla.
+
+Cualquier agente con tus credenciales puede implementarte login social en una tarde. Lo que no te dice es que está escribiendo —adentro de tu app— un mini Prysm:ID: callbacks OAuth, sesiones, refresh tokens, account linking, recovery, audit logs, multi-tenant cuando lo necesites. Ese código ahora es **tuyo**: lo mantenés vos cuando Google rote un scope, cuando tu primer cliente enterprise te pida SAML, cuando aparezca passkeys, cuando audit te pida SOC2.
+
+Con Prysm:ID, ese código no existe en tu repo — es una llamada API. El mismo agente que te lo iba a construir, te lo integra en 30 segundos vía MCP. **Misma velocidad el día 1, cero deuda técnica el día 400.**
+
+[Empezá con Claude →](/agents/quickstart-claude/)
+
+## Lo más buscado
+
+<CardGrid>
+  <LinkCard title="Quickstart" href="/quickstart/" description="De cero a primer login en 5 minutos." />
+  <LinkCard title="Modelo de arquitectura" href="/concepts/architecture/" description="Por qué multi-tenant físico y no lógico." />
+  <LinkCard title="Validar JWT en tu backend" href="/integrate/jwt-validation/" description="Verificar tokens emitidos por Prysm:ID." />
+  <LinkCard title="Custom branding" href="/integrate/custom-branding/" description="Logo, colores, dominio propio para el login." />
+  <LinkCard title="Webhooks" href="/integrate/webhooks/" description="Reaccionar a signups, logins, cambios de plan." />
+  <LinkCard title="Tools del MCP server" href="/agents/tools/" description="Catálogo de operaciones disponibles para agentes." />
+</CardGrid>
+
+## La promesa
+
+> **Tu capa de identidad, siempre en tus manos.**
+
+Lo que entra como complejidad sale como espectro ordenado. Y la base —Zitadel, Apache 2.0— es portable para siempre. Si mañana Prysm:ID desaparece, Zitadel sigue ahí, y tu DNS apunta a donde vos elijas.

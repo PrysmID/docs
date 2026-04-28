@@ -1,0 +1,95 @@
+---
+title: Connect IdPs
+description: Google, GitHub, Microsoft and SAML. Step by step from the dashboard.
+---
+
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+An external **IdP** (Identity Provider) lets your users sign in with their Google, GitHub, Microsoft, or their company's corporate IdP (SAML / OIDC). For your workspace, adding an IdP is:
+
+`Dashboard → IdPs → Add provider → pick`
+
+You'll need `client_id` and `client_secret` from the provider. How to get them varies:
+
+<Tabs syncKey="idp">
+<TabItem label="Google">
+
+1. [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials.
+2. **Create Credentials → OAuth client ID → Web application**.
+3. **Authorized redirect URIs**: paste the callback the dashboard shows when you pick Google. Form: `https://auth.<your-slug>.prysmid.com/idps/callback`.
+4. Save → copy `client_id` and `client_secret`.
+5. In the Prysm:ID dashboard, paste both. Test → activate.
+
+**Default scopes**: `openid email profile`. If you need more (calendar, drive, etc), pass them as additional params — but remember each new scope requires user consent.
+
+</TabItem>
+<TabItem label="GitHub">
+
+1. [GitHub → Settings → Developer settings → OAuth Apps → New OAuth App](https://github.com/settings/developers).
+2. **Application name**: your product. **Homepage URL**: your landing.
+3. **Authorization callback URL**: `https://auth.<your-slug>.prysmid.com/idps/callback`.
+4. Generate client_secret → copy.
+5. Prysm:ID dashboard → paste → activate.
+
+GitHub doesn't return `email` by default if the user keeps it private. Request scope `user:email` and resolve it on your side.
+
+</TabItem>
+<TabItem label="Microsoft / Azure AD">
+
+1. [Azure portal → Azure Active Directory → App registrations → New registration](https://portal.azure.com).
+2. **Redirect URI** (Web): `https://auth.<your-slug>.prysmid.com/idps/callback`.
+3. **Certificates & secrets → New client secret** → copy value.
+4. **Application (client) ID**: copy from the overview.
+5. **Supported account types**: pick "Multitenant" if any Microsoft user can enter, or "Single tenant" if only your org.
+6. Prysm:ID dashboard → paste both.
+
+If your enterprise customer asks "only users from their Azure tenant", configure a specific `tenant_id` in the advanced section.
+
+</TabItem>
+<TabItem label="SAML">
+
+For SAML IdPs (Okta, OneLogin, Azure AD via SAML, etc):
+
+1. In your IdP, create a "SAML application".
+2. **ACS URL** (Assertion Consumer Service): `https://auth.<your-slug>.prysmid.com/saml/acs`.
+3. **Entity ID**: `https://auth.<your-slug>.prysmid.com/saml/metadata`.
+4. **NameID format**: `EmailAddress` (recommended).
+5. **Attributes**: at minimum `email`. Optional: `firstName`, `lastName`, `groups`.
+6. Your IdP gives you a **metadata URL** or an XML download.
+7. Prysm:ID dashboard → Add SAML → paste the metadata URL or upload the XML.
+
+<Aside type="tip">
+SAML is **Pro+ plan**. On Free, the button shows disabled with an upsell to Pro. Reason is operational: SAML is per-tenant config, requires validation, denser support.
+</Aside>
+
+</TabItem>
+</Tabs>
+
+## After adding the IdP
+
+It appears as a button on your instance's login screen. Your user sees:
+
+```
+[ Login with Google ]
+[ Login with GitHub ]
+[ Login with Acme SSO ]   ← your corporate IdP
+─── or ───
+email: [          ]
+password: [       ]
+```
+
+Order is editable: drag & drop in the IdP list. The first one wins ≥40% of conversion (most prominent).
+
+## Per-tenant IdPs (Pro+)
+
+If your enterprise customer wants "only THEIR IdP" for THEIR tenant, not for your whole workspace:
+
+`Dashboard → workspace → tenants → <tenant> → IdPs → Add tenant IdP`
+
+These overrides apply only on OIDC flows with `tenant_hint=<tenant>`. Your other tenants don't see that IdP.
+
+## Remove an IdP
+
+`IdPs → ⋯ → Remove`. Existing sessions stay alive until expiry (tokens issued before are valid until `exp`). New logins through that IdP no longer work.
+
+If it was the only IdP in the workspace, we warn you: you'd leave the workspace with no login method except email/password. The MCP server requires human confirmation for this specific operation.

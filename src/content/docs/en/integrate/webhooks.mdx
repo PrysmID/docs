@@ -1,0 +1,105 @@
+---
+title: Webhooks
+description: React to signups, logins, plan changes. HMAC verification, retry policy, available events.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Webhooks let you find out about important events in your workspace **without polling**. When a user signs up in your Zitadel instance, we POST to your endpoint with the info. You respond 2xx and move on.
+
+## Create a webhook
+
+```bash
+curl -X POST https://api.prysmid.com/v1/workspaces/$WS/webhooks \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "url": "https://yourapp.com/hooks/prysmid",
+    "events": ["user.created", "user.deleted", "session.started"]
+  }'
+```
+
+Response:
+
+```json
+{
+  "id": "wh_abc123",
+  "url": "https://yourapp.com/hooks/prysmid",
+  "secret": "whsec_29uifd89...",   // shown ONCE; save it
+  "events": ["user.created", "user.deleted", "session.started"],
+  "created_at": "2026-04-28T10:00:00Z"
+}
+```
+
+## Verify the signature
+
+Each delivery includes header `Prysmid-Signature: t=<unix_ts>,v1=<hmac_sha256>`. The signature is computed over `<unix_ts>.<raw_body>` with your webhook secret as HMAC key.
+
+```python
+import hmac, hashlib, time
+
+def verify(secret, signature_header, raw_body, max_age_seconds=300):
+    parts = dict(p.split("=", 1) for p in signature_header.split(","))
+    ts, sig = int(parts["t"]), parts["v1"]
+    if abs(time.time() - ts) > max_age_seconds:
+        raise ValueError("timestamp too old (replay protection)")
+    expected = hmac.new(secret.encode(), f"{ts}.{raw_body}".encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, sig):
+        raise ValueError("invalid signature")
+```
+
+<Aside type="caution">
+**Always** validate the signature. Without that check, anyone with the URL can send forged payloads. And validate the timestamp too (replay protection) — an attacker who captures an old payload must not be able to reuse it.
+</Aside>
+
+## Available events
+
+| Event | Fires when |
+|---|---|
+| `user.created` | New user completed signup in your instance. |
+| `user.updated` | Email, name, attributes changed. |
+| `user.deleted` | User deleted by admin or self-service. |
+| `session.started` | Successful login. |
+| `session.ended` | Logout or expiration. |
+| `tenant.created` | New tenant created in your workspace. |
+| `tenant.deleted` | Tenant deleted. |
+| `plan.changed` | Your workspace changed plan (Free→Pro etc). |
+| `subscription.past_due` | Payment failed; you're in grace period. |
+| `mau.threshold_warning` | Crossed 80% / 95% / 100% of included MAU. |
+| `signups_blocked` | Spending cap reached; new signups blocked. |
+
+## Payload shape
+
+```json
+{
+  "id": "evt_abc123",
+  "type": "user.created",
+  "workspace_id": "ws_xyz",
+  "tenant_id": "tn_acme",
+  "created_at": "2026-04-28T10:00:00Z",
+  "data": {
+    "user_id": "294857...",
+    "email": "alice@acme.com",
+    "name": "Alice",
+    "via_idp": "google"
+  }
+}
+```
+
+## Retry policy
+
+If your endpoint responds non-2xx (or doesn't respond within 10s), we retry with exponential backoff:
+
+- 1m, 5m, 30m, 2h, 6h, 12h, 24h, 48h.
+- After 48h with no success, we mark the event `failed_permanent` and you can see it under `Settings → Webhooks → Failed`.
+
+**Idempotency**: use the event's `id` as deduplication key. A given event can be delivered multiple times (at-least-once, not exactly-once).
+
+## Endpoint health
+
+If your endpoint fails more than 5% of traffic over 30 minutes, we email a warning to workspace owners. If it stays down for 24h, we *pause* deliveries (events stay queued) until you manually reactivate from the dashboard.
+
+## What's NOT in webhooks (and why)
+
+- **Issued tokens** (`access_token` / `id_token`): we don't expose them via webhook. Risk of leaking active credentials.
+- **Passwords**: never hashed, never plain. Not even the hash leaves the instance.
+- **Realtime control plane events**: things like "workspace member changed role" — available in the audit log, not via webhook (low frequency, doesn't justify push).

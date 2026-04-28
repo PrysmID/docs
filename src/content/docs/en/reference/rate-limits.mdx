@@ -1,0 +1,62 @@
+---
+title: Rate limits
+description: Control plane and data plane limits. How to measure, how to handle.
+---
+
+## Two planes, two policies
+
+| Plane | Endpoint | Limit | Why |
+|---|---|---|---|
+| **Control** | `api.prysmid.com/v1/*` | 60 req/min per workspace, 600 req/min per org | Admin operations: low volume, high cost. Limiting protects Stripe, Cloudflare, Zitadel admin from abuse. |
+| **Data** | `auth.<slug>.prysmid.com/*` | 50 req/sec per instance (burst 200) | Login flow: high volume. Configurable on Pro+ if you grow. |
+| **Webhooks** (egress) | our POST to your endpoint | 100 deliveries/min per endpoint | Protects you: if your endpoint breaks, we don't pile on. |
+
+## Response headers
+
+All calls to `api.prysmid.com` include:
+
+```
+X-RateLimit-Limit:     60
+X-RateLimit-Remaining: 47
+X-RateLimit-Reset:     1738000060
+```
+
+When exhausted:
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 12
+```
+
+`Retry-After` in seconds. Wait and retry.
+
+## Recommended strategy
+
+**For server-side apps**:
+1. Cache responses when you can (workspace list, configured IdPs — they change rarely).
+2. Exponential backoff on first 429: 1s, 2s, 4s, 8s, max 30s.
+3. ±20% random jitter to avoid thundering-herd with your other clients.
+
+**For agents**:
+The MCP server does automatic backoff and dedup. If your agent fires a sequence of "list workspaces, read one, list again", only the first list hits; the second comes from a 5s cache.
+
+**For batch operations**:
+If you need to create 50 tenants at once, the right path is the **batch API** (`POST /v1/workspaces/$WS/tenants:batch` with payload array). Not N parallel calls. Batch API has a different limit (5 batches/min × up to 100 items each = 500 creations/min without hitting the rate limit).
+
+## Raising the limit
+
+**Pro**: default is enough for 99% of workspaces. If you genuinely need more, write us with the use case.
+**Enterprise**: part of the contract. Talk to sales and pick the number you need.
+
+## What's NOT rate-limited
+
+- **Healthchecks** (`api.prysmid.com/healthz`).
+- **OIDC discovery** (`auth.<slug>.prysmid.com/.well-known/openid-configuration`).
+- **JWKS** (`auth.<slug>.prysmid.com/oauth/v2/keys`) — Cloudflare caches it aggressively.
+- **Static assets** of the dashboard (cached on CF Pages).
+
+## Webhook deliveries — specific policy
+
+If your endpoint responds slow (>10s) or non-2xx, we retry with backoff (1m, 5m, 30m, 2h, 6h, 12h, 24h, 48h). After 48h we mark it permanently failed.
+
+If your endpoint fails >5% of traffic over 30 minutes, we email workspace owners. If it stays down >24h, we **pause** deliveries (events stay queued) until you manually reactivate from the dashboard. This protects your BE during incidents.

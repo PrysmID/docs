@@ -1,0 +1,129 @@
+---
+title: Conectar Claude en 60 segundos
+description: npx @prysmid/mcp en tu config de Claude Desktop o Claude Code. Listo.
+---
+
+import { Steps, Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+Conectar tu agente de Claude a Prysm:ID literalmente toma menos de un minuto. Acá está el camino completo.
+
+<Steps>
+
+1. **Crear una machine key.**
+
+   En `app.prysmid.com → settings → machine keys`, click **New machine key**. Le ponés un nombre (`mi-agente-local`), seleccionás el scope (`workspace:admin` para empezar), y descargás el JSON. Lo vas a usar en el siguiente paso.
+
+   <Aside type="note">
+   La machine key es un **service account scopeado**, no tu API key personal. Si la comprometen, la rotás desde el dashboard sin afectar otras integraciones. [Más sobre machine keys →](/agents/machine-keys/)
+   </Aside>
+
+2. **Configurar Claude.**
+
+   <Tabs syncKey="claude-app">
+   <TabItem label="Claude Desktop">
+   Editá `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+   ```json
+   {
+     "mcpServers": {
+       "prysmid": {
+         "command": "npx",
+         "args": ["-y", "@prysmid/mcp"],
+         "env": {
+           "PRYSMID_MACHINE_KEY_PATH": "/Users/you/.prysmid/key.json"
+         }
+       }
+     }
+   }
+   ```
+
+   Reiniciá Claude. Cuando arranque, vas a ver "prysmid" en la lista de tools (icono de martillo).
+   </TabItem>
+
+   <TabItem label="Claude Code">
+   En `~/.claude/mcp.json` (o desde el CLI):
+
+   ```bash
+   claude mcp add prysmid -- npx -y @prysmid/mcp
+   ```
+
+   Y configurá la env var:
+
+   ```bash
+   export PRYSMID_MACHINE_KEY_PATH=/path/to/key.json
+   ```
+
+   `claude /mcp` para verificar que conectó.
+   </TabItem>
+
+   <TabItem label="Cursor / otros">
+   Cualquier cliente MCP soporta el patrón estándar:
+
+   ```json
+   {
+     "mcpServers": {
+       "prysmid": {
+         "command": "npx",
+         "args": ["-y", "@prysmid/mcp"],
+         "env": {
+           "PRYSMID_MACHINE_KEY_PATH": "/path/to/key.json"
+         }
+       }
+     }
+   }
+   ```
+
+   Si tu cliente no soporta env vars, podés pasar la key inline con `--key-file`.
+   </TabItem>
+   </Tabs>
+
+3. **Probar.**
+
+   En Claude pedile algo simple:
+
+   > "Listame los workspaces que tengo en Prysm:ID."
+
+   Claude llama al tool `workspaces.list`, recibe el JSON, y te muestra una tabla. Si esto funciona, todo lo demás funciona.
+
+</Steps>
+
+## Qué pedirle a Claude (ejemplos)
+
+Estos son prompts que el MCP server entiende sin esfuerzo:
+
+> "Creame un workspace nuevo llamado `acme-test`, plan free."
+
+> "En el workspace `acme`, registrame una OAuth app llamada `Mi SaaS Dev` con redirect_uri `http://localhost:3000/auth/callback`."
+
+> "Conectá Google como IdP en el workspace `acme`. Las credenciales OAuth ya están en mis env vars como `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`."
+
+> "Mostrame los últimos 20 logins en el workspace `acme` de las últimas 24 horas."
+
+> "Subí el logo de `~/Downloads/acme-logo.png` al branding del workspace `acme` y pintá el color primary con `#FF6B6B`."
+
+> "Pasá `acme` a plan Pro con spending cap de USD 200."
+
+## Workflows típicos
+
+**Nuevo cliente enterprise te firma**:
+> "En el workspace `mi-saas-prod`, creame un tenant llamado `bigcorp`, conectame Okta como IdP usando estas credentials [...], y subí el logo de bigcorp.png"
+
+**Auditoría sale a la luz**:
+> "Para el workspace `mi-saas-prod`, exportame el audit log de los últimos 30 días en CSV."
+
+**Algo no funciona en producción**:
+> "Mostrame los webhooks fallidos del workspace `mi-saas-prod` en las últimas 6 horas y por qué fallaron."
+
+## Si algo falla
+
+**Claude dice "I don't have access to a Prysmid tool".**
+La config de MCP no se cargó. Reiniciá Claude completamente (no solo cerrá la ventana — `Quit` real). Verificá la ruta del config file.
+
+**`PRYSMID_MACHINE_KEY_PATH not found`.**
+La env var no llegó al subprocess de Claude. En macOS, si lanzaste Claude desde el Finder, no hereda tu shell env. Probá lanzar Claude desde terminal: `open -a Claude`.
+
+**`401 Unauthorized` en el primer tool call.**
+La machine key expiró o fue revocada. Generá una nueva en el dashboard y actualizá el path.
+
+**Claude llama al tool pero responde con "I'm not sure if you want to do this".**
+El tool tiene `requiresConfirmation: true` (lo más destructivo lo tiene). Aprobá explícitamente con "Sí, proceder".

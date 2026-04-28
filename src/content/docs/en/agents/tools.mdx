@@ -1,0 +1,106 @@
+---
+title: MCP tool catalog
+description: The operations available to your agent. Grouped by area. Each one with input/output shape.
+---
+
+This is the canonical list of tools `@prysmid/mcp` exposes today. We keep strict parity with the REST API: when we add something to the API, it shows up here automatically on the next MCP server release.
+
+<details>
+<summary>How the agent "sees" these tools</summary>
+
+When MCP connects, the server sends the client (Claude/GPT/etc) this catalog as JSON-Schema. The LLM gets it in its context window and decides which to call based on user intent. You don't paste these schemas yourself — the agent discovers them.
+
+</details>
+
+## Workspaces
+
+| Tool | Does |
+|---|---|
+| `workspaces.list` | Lists workspaces accessible to your machine key. |
+| `workspaces.get` | Detail of one workspace by slug or id. |
+| `workspaces.create` | Creates a new workspace. Args: `slug`, `display_name`, `plan` (`free`/`pro`). |
+| `workspaces.delete` | Deletes a workspace. **Requires human confirmation**. |
+
+## Tenants
+
+| Tool | Does |
+|---|---|
+| `tenants.list` | Lists tenants inside a workspace. |
+| `tenants.create` | Creates a tenant. Args: `workspace_slug`, `slug`, `display_name`. |
+| `tenants.delete` | Deletes a tenant. **Requires human confirmation**. |
+
+## OAuth Apps
+
+| Tool | Does |
+|---|---|
+| `apps.list` | Lists registered OAuth apps in the workspace. |
+| `apps.create` | Registers app. Args: `name`, `redirect_uris[]`, `type` (`web`/`spa`/`mobile`). Returns `client_id` and `client_secret` (last visible once). |
+| `apps.update` | Edits redirect URIs, name, etc. |
+| `apps.rotate_secret` | Generates new `client_secret`. Old one valid for 24h. |
+| `apps.delete` | Removes app. **Requires human confirmation**. |
+
+## IdPs
+
+| Tool | Does |
+|---|---|
+| `idps.list` | Lists configured IdPs. |
+| `idps.add_google` | Connects Google OAuth. Args: `client_id`, `client_secret`. |
+| `idps.add_github` | Connects GitHub OAuth. |
+| `idps.add_microsoft` | Connects Microsoft / Azure AD. |
+| `idps.add_saml` | Connects SAML IdP. Args: `metadata_url` or `metadata_xml`. |
+| `idps.remove` | Removes an IdP. Existing sessions stay alive until expiry. |
+
+## Branding
+
+| Tool | Does |
+|---|---|
+| `branding.get` | Reads current workspace branding. |
+| `branding.set` | Sets logo / colors / footer toggle / custom CSS. |
+| `branding.set_custom_domain` | Requests custom domain. Returns CNAME to configure in your DNS. |
+
+## Audit
+
+| Tool | Does |
+|---|---|
+| `audit.events` | Queries the instance's audit log. Args: `since`, `until`, `event_type`, `actor`. |
+| `audit.export` | Exports to CSV. Returns pre-signed URL with 1h TTL. |
+
+## Billing
+
+| Tool | Does |
+|---|---|
+| `billing.get_plan` | Current plan + spending cap + period MAU usage. |
+| `billing.set_plan` | Changes plan. Upgrades apply immediately; downgrades schedule at period end. |
+| `billing.set_spending_cap` | Sets/unsets overage cap. Pass `null` for "unlimited". |
+| `billing.open_portal` | Returns Stripe Customer Portal URL for a human to manage payment method / cancellations. |
+
+## Webhooks
+
+| Tool | Does |
+|---|---|
+| `webhooks.list` | Lists configured webhooks. |
+| `webhooks.create` | Creates webhook. Args: `url`, `events[]`. Returns secret once. |
+| `webhooks.rotate_secret` | Rotates secret. |
+| `webhooks.delete` | Removes. |
+| `webhooks.replay` | Replays a failed event by id. |
+
+## Machine keys (meta)
+
+| Tool | Does |
+|---|---|
+| `keys.list` | Lists machine keys in the workspace (the calling key included with `is_self` flag). |
+| `keys.create` | Creates machine key with scope. **Requires human confirmation** if scope ≥ `workspace:admin`. |
+| `keys.revoke` | Revokes a key. |
+
+## Tool conventions
+
+- **Naming**: `area.verb` (`workspaces.create`, not `create_workspace` or `createWorkspace`). Consistent with the dashboard.
+- **Idempotency**: create operations accept an optional `idempotency_key` so an agent can retry without duplicating.
+- **Errors**: come with machine-readable `code` and human-readable `message`. The agent decides whether to retry, escalate to the human, or abort.
+- **Confirmation gates**: destructive tools (`delete`, `revoke`, `set_plan` when downgrading) require explicit human confirmation. MCP returns `requires_confirmation: true` and the agent must re-call with `confirmed: true` after your OK. [More in safe-defaults →](/en/agents/safe-defaults/)
+
+## Roadmap
+
+**Coming tools (not shipped yet)**: `users.search`, `users.create`, `users.suspend`, `sessions.list`, `sessions.revoke`. Behind the MCP server lift to v0.2 — phase 15.5 of the roadmap.
+
+If you're missing an operation the API supports but MCP doesn't yet — file it on GitHub: the lag closes fast.

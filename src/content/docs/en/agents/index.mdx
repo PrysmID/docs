@@ -1,0 +1,73 @@
+---
+title: Agents (MCP)
+description: Your control plane, accessible to agents. The only auth your AI can run end-to-end.
+---
+
+import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+> **The only auth your AI agent can run end-to-end.**
+
+Every action in the Prysm:ID dashboard also exists as an **MCP tool**. That means an agent with access to the MCP server can create workspaces, register OAuth apps, connect IdPs, configure branding, read audit logs — everything you do by clicking.
+
+It's not a hasty wrapper of the REST API. It's a native channel designed so an agent doesn't get confused: each tool has clear intent, validations that prevent invalid states, and descriptions tuned so the LLM knows *when* to use it, not just how.
+
+## Why AI-first is structural
+
+Prysm:ID was born in 2026, after Claude, GPT-4, Cursor. We assumed from day one that **many developers will delegate tasks to agents**. If the only way to configure your auth is clicking the dashboard, your agent is locked out. If the way is the REST API, your agent can but **needs context-rich docs and schemas on every call**, burning tokens and inviting errors.
+
+MCP (Model Context Protocol) solves this: your agent receives the tool catalog on connect; each call is semantically clear; arguments are typed; errors are intelligible.
+
+## What an agent can do today
+
+- Create and delete workspaces
+- Create tenants inside a workspace
+- Register and edit OAuth apps (`client_id`/`client_secret`/redirect URIs)
+- Connect social IdPs (Google, GitHub, Microsoft) and SAML
+- Configure branding (logo, colors, custom domain)
+- Read audit logs and workspace events
+- Set / change / view plan and spending cap
+- Create / rotate webhooks
+
+[See full catalog →](/en/agents/tools/)
+
+## What it can't do (and why)
+
+- **Change the Stripe payment method** — requires human action in the Customer Portal.
+- **Read passwords** — passwords don't leave the instance, not even hashed.
+- **Delete the workspace** without a human confirmation token.
+- **Operate workspaces from another organization** — the machine key is scoped.
+
+[Safe-defaults model →](/en/agents/safe-defaults/)
+
+## Get started
+
+<CardGrid>
+  <LinkCard
+    title="Connect Claude Desktop in 60 seconds"
+    href="/en/agents/quickstart-claude/"
+    description="npx @prysmid/mcp + two lines in claude_desktop_config.json. Done."
+  />
+  <LinkCard
+    title="Tool catalog"
+    href="/en/agents/tools/"
+    description="Available operations, grouped by area."
+  />
+  <LinkCard
+    title="Machine keys"
+    href="/en/agents/machine-keys/"
+    description="Scoped service accounts for your agent."
+  />
+  <LinkCard
+    title="Safe defaults"
+    href="/en/agents/safe-defaults/"
+    description="What we block by default and how to elevate when needed."
+  />
+</CardGrid>
+
+## Philosophy
+
+> Your agent can build you auth. Or it can integrate Prysm:ID in 30 seconds and save you from maintaining it.
+
+Any modern agent with your Google/GitHub credentials can implement social login in an afternoon. The question isn't **whether it can do it on day 1**: it's **who maintains it on day 400**, when Google rotates a scope, when your first enterprise customer asks for SAML, when passkeys land, when audit asks for SOC2.
+
+With Prysm:ID, that code doesn't exist in your repo. The same agent that was going to build it integrates it in 30 seconds via MCP. **Same speed on day 1, zero technical debt on day 400.**
