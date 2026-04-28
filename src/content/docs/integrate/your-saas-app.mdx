@@ -13,7 +13,7 @@ Si lo que vos vendés es una app B2B donde **cada cliente tuyo necesita su propi
 
 ```
 Tu workspace en Prysm:ID
-└── auth.<tu_slug>.prysmid.com    (una sola instance Zitadel)
+└── auth.<tu_slug>.prysmid.com    (una sola instancia)
     ├── tenant: Acme Corp (cliente tuyo)
     │   ├── users: alice@acme, bob@acme
     │   ├── IdP propio: Acme SSO (Okta, Azure AD, Google Workspace)
@@ -25,7 +25,7 @@ Tu workspace en Prysm:ID
     └── tenant: …
 ```
 
-Una sola instance Zitadel, N tenants adentro. **El aislamiento se da a nivel de workspace** (entre vos y otros clientes de Prysm:ID), no entre los tenants tuyos. Tus tenants comparten infraestructura *tuya* — eso está bien y es lo esperable, igual que cualquier SaaS B2B.
+Una sola instancia, N tenants adentro. **El aislamiento se da a nivel de workspace** (entre vos y otros clientes de Prysm:ID), no entre los tenants tuyos. Tus tenants comparten infraestructura *tuya* — eso está bien y es lo esperable, igual que cualquier SaaS B2B.
 
 ## Pasos prácticos
 

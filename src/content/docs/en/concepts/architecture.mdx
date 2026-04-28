@@ -1,15 +1,15 @@
 ---
 title: Architecture
-description: Why each of your customers gets their own Zitadel instance — physical isolation, not logical.
+description: Why each of your customers gets their own dedicated instance — physical isolation, not logical.
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
 
-Before integrating Prysm:ID it pays to understand a foundational decision that makes everything else cohere: **each workspace gets its own Zitadel instance**. This isn't marketing — it's the shape of the product.
+Before integrating Prysm:ID it pays to understand a foundational decision that makes everything else cohere: **each workspace gets its own dedicated instance**. This isn't marketing — it's the shape of the product.
 
 ## The model in one sentence
 
-> A Prysm:ID workspace = one dedicated Zitadel instance, with its own domain (`auth.<slug>.prysmid.com`), its own user database, its own key store, its own audit log.
+> A Prysm:ID workspace = one dedicated instance, with its own domain (`auth.<slug>.prysmid.com`), its own user database, its own key store, its own audit log.
 
 When you sign up as a Prysm:ID customer, we provision an independent stack for you. When *your* customer audits you and asks "do you share a database with other tenants?", the answer is **no**.
 
@@ -24,7 +24,7 @@ A query bug (missing `WHERE tenant_id = ?`) leaks data across tenants. There are
 GDPR, LGPD, SOC2 enterprise: the auditor asks "where does my company's data live?". With a dedicated instance, the answer is "in this host, this DB, this key store" — not "in a column among 50,000 other customers' data".
 
 **3. Portability.**
-If you want to leave, the export of your instance is complete and self-contained. You stand Zitadel up on your own infra, import the dump, point DNS. No "shared-table dependencies".
+If you want to leave, the export of your instance is complete and self-contained. You stand up your own infrastructure, import the dump, point DNS. No "shared-table dependencies".
 
 ## What it looks like in practice
 
@@ -39,7 +39,7 @@ If you want to leave, the export of your instance is complete and self-contained
 │  ┌──────────────────────────────┐  ┌──────────────────────────────┐  │
 │  │ workspace acme               │  │ workspace globex             │  │
 │  │ ─ auth.acme.prysmid.com      │  │ ─ auth.globex.prysmid.com    │  │
-│  │ ─ dedicated Zitadel instance │  │ ─ dedicated Zitadel instance │  │
+│  │ ─ dedicated instance │  │ ─ dedicated instance │  │
 │  │ ─ own DB schema              │  │ ─ own DB schema              │  │
 │  │ ─ own JWKS                   │  │ ─ own JWKS                   │  │
 │  │ ─ users, IdPs, apps          │  │ ─ users, IdPs, apps          │  │
@@ -52,35 +52,24 @@ If you want to leave, the export of your instance is complete and self-contained
 
 **Control plane** (`app.prysmid.com`, `api.prysmid.com`, `npx @prysmid/mcp`): where you administer your workspaces. Dashboard, webhooks, billing, API and MCP live here.
 
-**Data plane** (`auth.<slug>.prysmid.com`): your workspace's own Zitadel instance. Your *end users* talk here to log in. Your *app* talks here to validate JWTs via JWKS.
+**Data plane** (`auth.<slug>.prysmid.com`): your workspace's own dedicated instance. Your *end users* talk here to log in. Your *app* talks here to validate JWTs via JWKS.
 
-The two planes are separated by design. An outage on `app.prysmid.com` does not stop your users from logging in — their Zitadel instance is still there.
+The two planes are separated by design. An outage on `app.prysmid.com` does not stop your users from logging in — their instance is still there.
 
 ## Terms worth pinning
 
 | Term | What it is | Who owns it |
 |---|---|---|
 | **Workspace** | Your account in Prysm:ID. One of your organizations. | You (Prysm:ID customer) |
-| **Instance** (Zitadel) | The auth engine of your workspace. One per workspace. | You (Prysm:ID operates it) |
+| **Instance** | The auth engine of your workspace. One per workspace. | You (Prysm:ID operates it) |
 | **Tenant** | Your B2B customer. Lives *inside* your instance. | You (one per each of your customers) |
-| **Project** (Zitadel) | A "logical app" in Zitadel. Contains OIDC clients. | You (one per app you register) |
+| **Project** | A "logical app" grouping. Contains OIDC clients. | You (one per app you register) |
 | **OAuth client** | A concrete app (web, mobile, SPA) with its client_id/secret. | You |
 | **User** | A real person who logs in. Lives in your instance. | You (Prysm:ID persists them) |
 
 <Aside type="tip">
 The **workspace vs tenant** distinction confuses at first. Remember: you are the **workspace**. Each of *your customers* is a **tenant** within your workspace. If you have one customer, you have one tenant. If you have 50, you have 50 tenants in one instance.
 </Aside>
-
-## Tradeoffs we made
-
-**Higher per-workspace cost than logical multi-tenancy.**
-Yes, spinning up a dedicated instance costs more than adding a row to a shared table. That's why the Free plan is 10k MAU instead of 100k — sustaining an idle instance beyond that doesn't pencil. The Pro plan starts at $29/month precisely to align price with real cost.
-
-**60-90s cold start on signup.**
-The instance provisions on-demand. Not instant. In exchange, the first login of the first user after provisioning is among the fastest in the industry — the base is warm, not shared.
-
-**Higher operational complexity.**
-Running N instances instead of one is more operational work. We absorb that as the provider; you don't see it. The reason we charge what we charge is precisely that.
 
 ## What's next
 

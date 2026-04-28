@@ -8,7 +8,7 @@ import { Steps, Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starli
 Esta guía te lleva de **no tener cuenta** a **un usuario logueado en tu app** en cinco minutos. Después tenés tres ramificaciones: integrarlo en serio en tu SaaS, dejar que un agente lo opere, o seguir admin-eando desde el dashboard.
 
 <Aside type="note">
-Vas a necesitar: una cuenta de Google o GitHub para signup, un dominio cualquiera para tu cliente OAuth de prueba (puede ser `localhost`), y dos minutos de paciencia mientras se aprovisiona tu instance Zitadel.
+Vas a necesitar: una cuenta de Google o GitHub para signup, un dominio cualquiera para tu cliente OAuth de prueba (puede ser `localhost`), y dos minutos de paciencia mientras se aprovisiona tu instancia.
 </Aside>
 
 ## El recorrido
@@ -21,7 +21,7 @@ Vas a necesitar: una cuenta de Google o GitHub para signup, un dominio cualquier
 
 2. **Crear tu primer workspace.**
 
-   Después del primer login te pedimos un slug (ej: `acme`). Ese slug se vuelve `auth.acme.prysmid.com` — el dominio donde tus usuarios harán login. La provisión tarda 60-90 segundos: levantamos una instance Zitadel dedicada para tu workspace, le configuramos OIDC, branding default, y SMTP.
+   Después del primer login te pedimos un slug (ej: `acme`). Ese slug se vuelve `auth.acme.prysmid.com` — el dominio donde tus usuarios harán login. La provisión tarda 60-90 segundos: levantamos una instancia dedicada para tu workspace, configuramos OIDC, branding default y SMTP.
 
    <Aside type="tip">
    El slug es inmutable. Elegí algo que represente tu producto, no tu equipo. `acme` mejor que `acme-team-prod`.
@@ -148,7 +148,7 @@ Tres direcciones según qué te interesa profundizar:
 ## Troubleshooting
 
 **El workspace queda en `provisioning` más de 5 minutos.**
-Algo falló durante la provisión (DNS de Cloudflare, instance Zitadel, SMTP de EmBoux). Andá a **Settings → Status** del workspace para ver dónde se trabó. Si seguís bloqueado, escribinos: el state es recoverable sin perder el slug.
+Algo falló durante la provisión. Andá a **Settings → Status** del workspace para ver dónde se trabó. Si seguís bloqueado, escribinos: el state es recoverable sin perder el slug.
 
 **Mi app dice `redirect_uri_mismatch`.**
 La URI exacta que mandás en el authorize debe coincidir con alguna registrada en **Apps → tu app → Redirect URIs**. Trailing slashes cuentan.
@@ -157,4 +157,4 @@ La URI exacta que mandás en el authorize debe coincidir con alguna registrada e
 Pedí el scope `email` además de `openid profile`. Algunas librerías por default solo piden `openid`.
 
 **Necesito self-hostear esto.**
-Podés. Prysm:ID es Zitadel managed; exportás tu instance con `zitadel admin export` y la levantás vos. Ver [Modelo de seguridad / portabilidad](/concepts/security-model/).
+Podés. La base es open source: exportás tu instancia en formato estándar y la levantás en tu propia infraestructura. Ver [Modelo de seguridad / portabilidad](/concepts/security-model/).

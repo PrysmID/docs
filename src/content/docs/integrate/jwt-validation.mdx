@@ -120,9 +120,9 @@ end
 
 **Reloj.** Si tu server tiene clock skew de minutos, vas a rechazar tokens recién emitidos por `exp`. Sincronizá NTP.
 
-**`access_token` vs `id_token`.** El `id_token` es para tu *backend* (probás identidad del usuario). El `access_token` es para hablar con APIs (Zitadel u otras). No los mezcles.
+**`access_token` vs `id_token`.** El `id_token` es para tu *backend* (probás identidad del usuario). El `access_token` es para hablar con APIs. No los mezcles.
 
-**Multi-tenant: validá `resourceowner`.** Si servís a muchos tenants en una sola instance, no alcanza con `iss/aud/exp/sig` — también verificá que `urn:zitadel:iam:user:resourceowner:id` corresponda al tenant que el usuario está intentando acceder. Si no, Bob de Acme podría usar su token de Acme para acceder a recursos de Globex en tu app.
+**Multi-tenant: validá `resourceowner`.** Si servís a muchos tenants en una sola instancia, no alcanza con `iss/aud/exp/sig` — también verificá que `urn:zitadel:iam:user:resourceowner:id` (URN canónica del claim que viene en el JWT) corresponda al tenant que el usuario está intentando acceder. Si no, Bob de Acme podría usar su token de Acme para acceder a recursos de Globex en tu app.
 
 ## Errores comunes y qué significan
 

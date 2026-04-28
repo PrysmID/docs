@@ -25,7 +25,7 @@ El login es la primera pantalla que ven *los usuarios de tus clientes*. Que se v
 
 ## Configurar branding del workspace
 
-**Vía dashboard**: `app.prysmid.com → settings → branding`. Subís un PNG/SVG, elegís dos colores hex, previsualizás, guardás. Los cambios viven en la instance Zitadel del workspace y aplican a la próxima sesión.
+**Vía dashboard**: `app.prysmid.com → settings → branding`. Subís un PNG/SVG, elegís dos colores hex, previsualizás, guardás. Los cambios viven en la instancia del workspace y aplican a la próxima sesión.
 
 **Vía API**:
 
@@ -69,7 +69,7 @@ Cambiar el issuer es una operación con cuidado: los `id_token` ya emitidos refe
 
 Si la paleta + logo no te alcanza, podés inyectar CSS adicional. Vive en `branding.custom_css`. Limitaciones:
 
-- No JavaScript (Zitadel lo bloquea por seguridad).
+- No JavaScript (bloqueado por seguridad).
 - Tamaño max: 64 KB.
 - No carga de assets externos (sin `@import` de fuentes externas; tenés que hostearlas vos).
 

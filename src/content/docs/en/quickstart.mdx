@@ -8,7 +8,7 @@ import { Steps, Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starli
 This guide takes you from **no account** to **a user signed into your app** in five minutes. After that you fork into three paths: integrate it seriously into your SaaS, hand it to an agent, or keep admin-ing from the dashboard.
 
 <Aside type="note">
-You'll need: a Google or GitHub account for signup, any domain for your test OAuth client (`localhost` works), and two minutes of patience while your Zitadel instance provisions.
+You'll need: a Google or GitHub account for signup, any domain for your test OAuth client (`localhost` works), and two minutes of patience while your instance provisions.
 </Aside>
 
 ## The walkthrough
@@ -21,7 +21,7 @@ You'll need: a Google or GitHub account for signup, any domain for your test OAu
 
 2. **Create your first workspace.**
 
-   After your first login we ask for a slug (e.g. `acme`). That slug becomes `auth.acme.prysmid.com` — the domain where your users will sign in. Provisioning takes 60-90 seconds: we spin up a dedicated Zitadel instance for your workspace, configure OIDC, default branding, and SMTP.
+   After your first login we ask for a slug (e.g. `acme`). That slug becomes `auth.acme.prysmid.com` — the domain where your users will sign in. Provisioning takes 60-90 seconds: we spin up a dedicated instance for your workspace, configure OIDC, default branding and SMTP.
 
    <Aside type="tip">
    The slug is immutable. Pick something that represents your product, not your team. `acme` over `acme-team-prod`.
@@ -148,7 +148,7 @@ Three directions depending on what you want to deepen:
 ## Troubleshooting
 
 **The workspace stays in `provisioning` for more than 5 minutes.**
-Something failed during provision (Cloudflare DNS, Zitadel instance, EmBoux SMTP). Go to **Settings → Status** on the workspace to see where it stalled. If you stay blocked, write us — the state is recoverable without losing the slug.
+Something failed during provision. Go to **Settings → Status** on the workspace to see where it stalled. If you stay blocked, write us — the state is recoverable without losing the slug.
 
 **My app says `redirect_uri_mismatch`.**
 The exact URI you send in authorize must match one registered under **Apps → your app → Redirect URIs**. Trailing slashes count.
@@ -157,4 +157,4 @@ The exact URI you send in authorize must match one registered under **Apps → y
 Request the `email` scope on top of `openid profile`. Some libraries only request `openid` by default.
 
 **I need to self-host this.**
-You can. Prysm:ID is managed Zitadel; export your instance with `zitadel admin export` and stand it up yourself. See [Security model & portability](/en/concepts/security-model/).
+You can. The foundation is open source: export your instance in standard format and stand it up in your own infrastructure. See [Security model & portability](/en/concepts/security-model/).

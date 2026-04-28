@@ -43,7 +43,7 @@ La API REST y el MCP server devuelven errores con la misma forma:
 | HTTP | Code | Qué pasa |
 |---|---|---|
 | 500 | `internal_error` | Bug nuestro. Reportalo con `request_id`. |
-| 502 | `upstream_error` | Algo upstream (Stripe, Zitadel, EmBoux, Cloudflare) falló. Reintentá con backoff. |
+| 502 | `upstream_error` | Algo upstream falló. Reintentá con backoff. |
 | 503 | `service_unavailable` | Mantenimiento o degradación parcial. Reintentá. |
 
 ## Errores específicos por área
@@ -80,7 +80,7 @@ La API REST y el MCP server devuelven errores con la misma forma:
 
 ## Errores de validación de tokens (cliente OIDC)
 
-Estos los emite Zitadel directamente, no nosotros. Forma estándar OAuth 2:
+Estos los emite la instancia directamente, no el plano de control. Forma estándar OAuth 2:
 
 ```
 { "error": "invalid_grant", "error_description": "..." }

@@ -13,7 +13,7 @@ If what you sell is a B2B app where **each of your customers needs its own login
 
 ```
 Your Prysm:ID workspace
-└── auth.<your_slug>.prysmid.com    (one Zitadel instance)
+└── auth.<your_slug>.prysmid.com    (one instance)
     ├── tenant: Acme Corp (your customer)
     │   ├── users: alice@acme, bob@acme
     │   ├── their own IdP: Acme SSO (Okta, Azure AD, Google Workspace)
@@ -25,7 +25,7 @@ Your Prysm:ID workspace
     └── tenant: …
 ```
 
-One Zitadel instance, N tenants inside. **Isolation happens at the workspace level** (between you and other Prysm:ID customers), not between your tenants. Your tenants share *your* infrastructure — that's fine and expected, just like any B2B SaaS.
+One instance, N tenants inside. **Isolation happens at the workspace level** (between you and other Prysm:ID customers), not between your tenants. Your tenants share *your* infrastructure — that's fine and expected, just like any B2B SaaS.
 
 ## Practical steps
 

@@ -7,7 +7,7 @@ description: Limits del control plane y del data plane. Cómo medirlos, cómo ma
 
 | Plano | Endpoint | Límite | Por qué |
 |---|---|---|---|
-| **Control** | `api.prysmid.com/v1/*` | 60 req/min por workspace, 600 req/min por org | Operaciones de admin: bajo volumen, alto costo. Limitar protege Stripe, Cloudflare, Zitadel admin de abuse. |
+| **Control** | `api.prysmid.com/v1/*` | 60 req/min por workspace, 600 req/min por org | Operaciones de admin: bajo volumen, alto costo. El cap protege la plataforma de abuso. |
 | **Data** | `auth.<slug>.prysmid.com/*` | 50 req/seg por instance (burst 200) | Login flow: alto volumen. Configurable Pro+ si crecés. |
 | **Webhooks** (egreso) | nuestro POST a tu endpoint | 100 deliveries/min por endpoint | Te protege a vos: si tu endpoint se rompe, no te bombardeamos. |
 

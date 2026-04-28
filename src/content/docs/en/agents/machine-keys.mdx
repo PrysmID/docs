@@ -103,7 +103,7 @@ Immediate. Any `access_token` already issued against that key stays valid for up
 
 - **Not universal passes**. They're per workspace. If you operate 5 workspaces, you have 5 keys (one per workspace) or one "ops" workspace with tenants.
 - **Don't enable end-user login**. For that you have OIDC + OAuth clients, not machine keys.
-- **Don't grant direct Zitadel instance access**. Only control plane. If you need to operate Zitadel low-level, use its own service-account key (Settings → Zitadel → Service accounts).
+- **Don't grant direct low-level instance access**. Only the control plane. If you need to operate at a lower level, generate a dedicated service-account key under Settings → Service accounts.
 
 ## Best practices
 

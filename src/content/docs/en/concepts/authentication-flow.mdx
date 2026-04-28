@@ -15,7 +15,7 @@ The recommended flow for web apps, mobile, and SPAs. For pure backend-to-backend
    ┌──────────┐                                   ┌────────────────────┐
    │ Your app │                                   │  auth.acme.        │
    │ (browser │                                   │  prysmid.com       │
-   │  or BE)  │                                   │  (Zitadel instance)│
+   │  or BE)  │                                   │  (instance)        │
    └────┬─────┘                                   └─────────┬──────────┘
         │                                                   │
         │  1. user clicks "Login"                           │
@@ -79,7 +79,7 @@ The `id_token` is a **signed JWT** (RS256 by default). Decoded, the typical payl
 | `profile` | `name`, `preferred_username`, `picture`. |
 | `email` | `email`, `email_verified`. |
 | `offline_access` | Returns a `refresh_token` for long-lived sessions. |
-| `urn:zitadel:iam:org:project:roles` | User roles in the Zitadel project tied to your app. |
+| `urn:zitadel:iam:org:project:roles` | User roles in the project tied to your app. (Canonical claim URN; don't rewrite it in your validator.) |
 
 <Aside type="tip">
 Request only what you'll use. The less data in the JWT, the less risk if it leaks.

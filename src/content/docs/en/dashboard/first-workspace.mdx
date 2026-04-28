@@ -13,11 +13,11 @@ Click "Create" and provisioning begins. For the next 60-90 seconds we do:
 | Step | Takes | What it does |
 |---|---|---|
 | Reserve slug | `<1s` | Verify `acme` isn't in use. |
-| Create DNS | 5-10s | `auth.acme.prysmid.com` → CNAME to the instance. Cloudflare Records API. |
-| Provision Zitadel | 30-60s | Spin up dedicated instance, Postgres schema, JWKS keys. |
-| Configure SMTP | 5-10s | Connect the instance to EmBoux (transactional email service). |
+| Create DNS | 5-10s | `auth.acme.prysmid.com` points to your instance. |
+| Provision instance | 30-60s | Spin up dedicated instance, database, key store. |
+| Configure email | 5-10s | Connect the instance to the transactional email service. |
 | Default branding | `<1s` | "Powered by Prysm:ID" logo + default palette. |
-| TLS cert | 10-30s | Let's Encrypt for `auth.acme.prysmid.com`. |
+| TLS cert | 10-30s | Issue certificate for `auth.acme.prysmid.com`. |
 | Healthcheck | `<5s` | Validate the OIDC endpoint responds. |
 | Flip to `active` | `<1s` | Done. |
 
@@ -25,7 +25,7 @@ While provisioning you'll see a screen with a **live stepper** showing which ste
 
 ## If provisioning fails
 
-It does sometimes — usually slow Cloudflare DNS, long Zitadel cold start, or EmBoux SMTP quota. When it happens, the workspace stays at `failed_provisioning` with a detail of the failed step:
+It does sometimes — usually slow DNS, long cold start, or transactional-email quota. When it happens, the workspace stays at `failed_provisioning` with a detail of the failed step:
 
 - **Recoverable**: click "Retry provisioning" on the error screen. Slug is preserved.
 - **If it fails again on retry**: write to support. Almost always new-account config (initial quotas) we resolve manually.

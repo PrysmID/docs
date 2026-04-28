@@ -10,31 +10,31 @@ This page exists so when your enterprise customer audits you, you have something
 ## Isolation
 
 **Do you share a database with other tenants?**
-No. Each workspace has its own Zitadel instance with its own schema in Postgres. No cross-workspace shared table except the control plane (billing, Prysm:ID's own audit), which contains no PII of your end users.
+No. Each workspace has its own dedicated instance with its own schema in Postgres. No cross-workspace shared table except the control plane (billing, Prysm:ID's own audit), which contains no PII of your end users.
 
 **Is there a network path between instances?**
-Instances don't talk to each other. One instance can't query another, not even through a misconfiguration: they live in separate VPCs / namespaces.
+Instances don't talk to each other. One instance can't query another, not even through a misconfiguration: they live in separate networks.
 
 **What if the control plane is breached?**
-The control plane can orchestrate workspaces (create, suspend, read config) but can't read your end users' credentials. Passwords live hashed (bcrypt) inside the workspace's Zitadel instance, never leave it.
+The control plane can orchestrate workspaces (create, suspend, read config) but can't read your end users' credentials. Passwords live hashed (bcrypt) inside the workspace's instance, never leave it.
 
 ## Encryption
 
-**At rest**: Postgres with AES-256 volume-level encryption (gp3 EBS encrypted). Snapshots and backups also encrypted.
+**At rest**: Postgres with AES-256 volume-level encryption. Snapshots and backups also encrypted.
 
-**In transit**: TLS 1.3 enforced on every public endpoint (`auth.*.prysmid.com`, `api.prysmid.com`, `app.prysmid.com`). The control plane talks to the Zitadel instance over internal TLS too; no plain traffic on any hop.
+**In transit**: TLS 1.3 enforced on every public endpoint (`auth.*.prysmid.com`, `api.prysmid.com`, `app.prysmid.com`). The control plane talks to your instance over internal TLS too; no plain traffic on any hop.
 
-**Application-level**: the Zitadel service-account credentials the control plane needs to operate your instance are **encrypted with Fernet** before persisting. The encryption key lives only in SSM Parameter Store (not in code, not in plain DB backups).
+**Application-level**: any service-account credentials the control plane needs to operate your instance are **encrypted with Fernet** before persisting.
 
 ## Keys and token signing
 
-Each Zitadel instance has its own key store. `id_token` and `access_token` are signed with **RS256** by default. Public keys are exposed via JWKS at `https://auth.<slug>.prysmid.com/oauth/v2/keys`.
+Each instance has its own key store. `id_token` and `access_token` are signed with **RS256** by default. Public keys are exposed via JWKS at `https://auth.<slug>.prysmid.com/oauth/v2/keys`.
 
-**Rotation**: Zitadel rotates signing keys automatically. The old key stays valid for a grace period. Your client must follow JWKS dynamically, not cache a fixed key (most OIDC libraries do this right by default).
+**Rotation**: signing keys rotate automatically. The old key stays valid for a grace period. Your client must follow JWKS dynamically, not cache a fixed key (most OIDC libraries do this right by default).
 
 ## Audit
 
-**Who does what inside your instance**: Zitadel's native audit log records every event (signup, login, logout, password change, IdP linking, role grant, app registration). Access it via your instance's admin API, or via the dashboard at `app.prysmid.com → audit`.
+**Who does what inside your instance**: the native audit log records every event (signup, login, logout, password change, IdP linking, role grant, app registration). Access it via your instance's admin API, or via the dashboard at `app.prysmid.com → audit`.
 
 **Who touches the control plane**: separate audit log for admin actions on `app.prysmid.com` (which workspace member changed what). Visible from the dashboard.
 
@@ -42,25 +42,20 @@ Each Zitadel instance has its own key store. `id_token` and `access_token` are s
 
 ## Portability — the "exit plan"
 
-This is the structural difference vs Clerk / Auth0 / WorkOS, so it gets documented properly.
-
 If you want to leave Prysm:ID today, you can:
 
-1. **Export**. Go to **Settings → Export** on the workspace. You download:
-   - Full dump of your Zitadel instance (official Zitadel format: users, IdPs, projects, apps, roles, branding).
-   - OpenAPI spec of the OIDC endpoints your app consumes (they don't change — standard OIDC).
-   - SQL dump of Postgres if you want bit-for-bit validation (Enterprise).
+1. **Export**. Go to **Settings → Export** on the workspace. You download a full dump of your instance (users, IdPs, projects, apps, roles, branding) in standard format.
 
-2. **Stand up your own Zitadel**. [Official Zitadel docs](https://zitadel.com/docs/self-hosting/deploy) — any server with Postgres works. Realistic operation is days, not months.
+2. **Stand up your own infrastructure**. The auth engine underneath is open source and self-hostable. Any server with Postgres works. Realistic operation is days, not months.
 
-3. **Import the dump**. `zitadel admin import <dump>`. Users, IdPs, apps — everything restores.
+3. **Import the dump**. Users, IdPs, apps, branding — everything restores.
 
 4. **Point your DNS**. `auth.acme.prysmid.com` you point yourself (CNAME to your server) or change the issuer in your app. Tokens issued before stay valid until expiry.
 
 5. **Cancel Prysm:ID**. Delete the workspace from the dashboard. The instance is deleted; backups purge at 90 days.
 
 <Aside type="tip">
-This isn't pitch material — the command to start is real: `zitadel admin export`. Try it on a test workspace before you need it.
+The export is a real operation, not pitch material. Try it on a test workspace before you need it — write to support if you'd like a walkthrough.
 </Aside>
 
 ## Compliance

@@ -120,9 +120,9 @@ end
 
 **Clock.** If your server has minute-level clock skew, you'll reject freshly issued tokens by `exp`. Sync NTP.
 
-**`access_token` vs `id_token`.** The `id_token` is for your *backend* (proves user identity). The `access_token` is for talking to APIs (Zitadel or others). Don't mix them.
+**`access_token` vs `id_token`.** The `id_token` is for your *backend* (proves user identity). The `access_token` is for talking to APIs. Don't mix them.
 
-**Multi-tenant: validate `resourceowner`.** If you serve many tenants in one instance, `iss/aud/exp/sig` isn't enough — also check that `urn:zitadel:iam:user:resourceowner:id` matches the tenant the user is trying to access. Otherwise Bob from Acme could use his Acme token to access Globex resources in your app.
+**Multi-tenant: validate `resourceowner`.** If you serve many tenants in one instance, `iss/aud/exp/sig` isn't enough — also check that `urn:zitadel:iam:user:resourceowner:id` (canonical claim URN that arrives in the JWT) matches the tenant the user is trying to access. Otherwise Bob from Acme could use his Acme token to access Globex resources in your app.
 
 ## Common errors and what they mean
 

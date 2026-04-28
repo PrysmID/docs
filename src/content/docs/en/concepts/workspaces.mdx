@@ -1,6 +1,6 @@
 ---
 title: Workspaces
-description: The basic unit of the model. One workspace = one of your accounts = one Zitadel instance.
+description: The basic unit of the model. One workspace = one of your accounts = one dedicated instance.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -9,7 +9,7 @@ A **workspace** is the account unit of Prysm:ID. It's what you create when you s
 
 - An immutable **slug** (`acme`).
 - An **auth domain** (`auth.acme.prysmid.com`).
-- A **dedicated Zitadel instance**.
+- A **dedicated dedicated instance**.
 - A **plan** (Free / Pro / Enterprise).
 - An **owner** (the human account that created it).
 - A set of **members** with roles.
@@ -20,11 +20,11 @@ A workspace is meant to represent **one SaaS product of yours**. If you have mul
 
 | State | What it means |
 |---|---|
-| `provisioning` | We just created the workspace. We're standing up the Zitadel instance, configuring DNS, getting everything ready. Takes 60-90s. |
+| `provisioning` | We just created the workspace. We're standing up the dedicated instance, configuring DNS, getting everything ready. Takes 60-90s. |
 | `active` | Ready for use. Login, dashboard, API, MCP — all available. |
 | `past_due` | A payment failed. The instance stays active but the dashboard shows a banner. If unresolved in 14 days, transitions to `suspended`. |
 | `suspended` | Payment unresolved. End-user login *disabled*; the data plane returns 503. Recoverable: pay and it returns to `active`. |
-| `failed_provisioning` | Something failed at create (DNS, Zitadel, SMTP). Recoverable without losing the slug; write us. |
+| `failed_provisioning` | Something failed at create. Recoverable without losing the slug; write us. |
 
 ## Members and roles
 
@@ -36,14 +36,14 @@ Each workspace has **members** (human accounts with dashboard access). Initial r
 - **Billing** — billing and plan changes only, no access to auth config.
 
 <Aside type="note">
-Workspace members are **human accounts on `app.prysmid.com`** (Prysm:ID's HQ), not end users. End users live inside the workspace's Zitadel instance and are distinct.
+Workspace members are **human accounts on `app.prysmid.com`**, not end users. End users live inside the workspace's instance and are distinct.
 </Aside>
 
 ## Plan and MAU
 
 The plan sets workspace limits. See [pricing](/en/reference/pricing/) for the full table. The essentials:
 
-- **MAU = Monthly Active Users**: distinct users who authenticated at least once in the current billing period. We measure via the workspace's Zitadel audit log.
+- **MAU = Monthly Active Users**: distinct users who authenticated at least once in the current billing period. We measure via the workspace's instance audit log.
 - On Pro, the first 100k MAU are included in the flat. Above that, $0.02 per MAU.
 - You can set a **spending cap**. If projected overage would cross the cap, we block new signups until next period. We never bill above your cap, but existing users keep logging in.
 

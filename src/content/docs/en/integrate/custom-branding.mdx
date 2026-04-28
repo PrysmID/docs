@@ -25,7 +25,7 @@ The login is the first screen *your customers' users* see. Making it look like y
 
 ## Configure workspace branding
 
-**Via dashboard**: `app.prysmid.com → settings → branding`. Upload PNG/SVG, pick two hex colors, preview, save. Changes live in the workspace's Zitadel instance and apply to the next session.
+**Via dashboard**: `app.prysmid.com → settings → branding`. Upload PNG/SVG, pick two hex colors, preview, save. Changes live in the workspace's instance and apply to the next session.
 
 **Via API**:
 
@@ -69,7 +69,7 @@ Changing the issuer is a careful operation: already-issued `id_token`s reference
 
 If palette + logo isn't enough, inject additional CSS. Lives in `branding.custom_css`. Limits:
 
-- No JavaScript (Zitadel blocks it for security).
+- No JavaScript (blocked for security).
 - Max size: 64 KB.
 - No external asset loading (no `@import` of remote fonts; you have to host them).
 

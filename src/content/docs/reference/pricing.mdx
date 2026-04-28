@@ -44,34 +44,6 @@ Total facturable: $29 + $600 = $629
 
 **Spending cap**: configurable. Cuando la proyección cruzaría el cap, bloqueamos signups nuevos. Tu factura nunca pasa el cap. [Cómo setearlo →](/dashboard/billing/#spending-cap)
 
-## Por qué $29 y no $0/$5/$99 como otros
-
-**No competimos en free generoso.** 10k MAU es deliberado. Si necesitás más de eso, generalmente ya estás monetizando — pasar a Pro es razonable.
-
-**$29/mes refleja costo real.** Cada workspace tuyo es una instance Zitadel dedicada. Sostener una instance ociosa cuesta. $29 alinea precio con costo, no con "el precio que la gente paga sin pensar".
-
-**$0.02 por MAU sobre 100k es debajo del mercado.** Auth0 cobra $0.025 + cargos por add-ons. Clerk cobra $0.02 *si* hacés contrato anual. WorkOS cobra $125 por conexión SSO. Nuestros números son flat y públicos.
-
-**Sin cargos por SSO/SAML en Enterprise.** WorkOS construyó un negocio entero cobrando $125 por conexión. Lo decimos: nos parece predatorio cuando el costo marginal es near-zero. Enterprise tiene SSO incluido sin cargo por conexión.
-
-## Comparativo honesto
-
-| Eje | Prysm:ID | Clerk | Auth0 | WorkOS |
-|---|---|---|---|---|
-| Free MAU | 10k | 10k | 7.5k | — |
-| Cost a 50k MAU/mes | $29 | $25-100 | $130-240 | n/a (no MAU model) |
-| Cost a 200k MAU/mes | $29 + $2,000 = $2,029 | $400-2,000 | $930-1,300 | n/a |
-| Cost de SSO en Enterprise | Incluido | $$$ | Add-on | $125/conn |
-| Multi-tenant físico | ✅ | ❌ | Parcial | ❌ |
-| Self-host real path | ✅ (Zitadel OSS) | ❌ | ❌ | ❌ |
-| MCP oficial | ✅ | ❌ | ❌ | ❌ |
-| Soporte español/LATAM nativo | ✅ | ❌ | ❌ | ❌ |
-| UI de login más pulida | No | **✅** | Parcial | Sí |
-
-<Aside type="tip">
-**Donde no ganamos no decimos que ganamos.** Clerk tiene mejor UI de login out-of-the-box. Auth0 tiene madurez de compliance enterprise más profunda. Si esos ejes son críticos para vos, probablemente no somos la mejor opción — y está bien decirlo.
-</Aside>
-
 ## Preguntas que recibimos
 
 **¿Cobran por workspace o por developer?**

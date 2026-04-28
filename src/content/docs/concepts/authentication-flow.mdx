@@ -15,7 +15,7 @@ Es el flow recomendado para apps web, móviles y SPAs. Para apps puramente backe
    ┌──────────┐                                   ┌────────────────────┐
    │  Tu app  │                                   │  auth.acme.        │
    │ (browser │                                   │  prysmid.com       │
-   │  o BE)   │                                   │  (instance Zitadel)│
+   │  o BE)   │                                   │  (instancia)       │
    └────┬─────┘                                   └─────────┬──────────┘
         │                                                   │
         │  1. usuario clic "Login"                          │
@@ -79,7 +79,7 @@ El `id_token` es un **JWT firmado** (RS256 por default). Decodificado, el payloa
 | `profile` | `name`, `preferred_username`, `picture`. |
 | `email` | `email`, `email_verified`. |
 | `offline_access` | Te devuelve `refresh_token` para sesiones largas. |
-| `urn:zitadel:iam:org:project:roles` | Roles del usuario en el project Zitadel asociado a tu app. |
+| `urn:zitadel:iam:org:project:roles` | Roles del usuario en el project asociado a tu app. (Es la URN canónica del claim, no la cambies en tu validador.) |
 
 <Aside type="tip">
 Pedí solo lo que vas a usar. Cuanto menos data en el JWT, menos riesgo si se filtra.

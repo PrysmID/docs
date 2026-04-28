@@ -103,7 +103,7 @@ Inmediato. Cualquier `access_token` ya emitido contra esa key sigue válido hast
 
 - **No son passes universales**. Son por workspace. Si operás 5 workspaces, tenés 5 keys (una por workspace) o un workspace "ops" con tenants.
 - **No habilitan login de end users**. Para esto está OIDC + clientes OAuth, no machine keys.
-- **No te dan acceso a la instance Zitadel directamente**. Solo al plano de control. Si necesitás operar Zitadel low-level, usá su propia service-account key (Settings → Zitadel → Service accounts).
+- **No te dan acceso al motor de auth low-level directamente**. Solo al plano de control. Si necesitás operar a más bajo nivel, generá una service-account key dedicada desde Settings → Service accounts.
 
 ## Buenas prácticas
 

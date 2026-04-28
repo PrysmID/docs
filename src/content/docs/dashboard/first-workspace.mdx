@@ -13,11 +13,11 @@ Click "Crear" y arranca la provisión. Los siguientes 60-90 segundos hacemos:
 | Paso | Tarda | Qué hace |
 |---|---|---|
 | Reservar slug | `<1s` | Verificar que `acme` no esté en uso. |
-| Crear DNS | 5-10s | `auth.acme.prysmid.com` → CNAME a la instance. Cloudflare Records API. |
-| Provisionar Zitadel | 30-60s | Levantar instance dedicada, schema Postgres, JWKS keys. |
-| Configurar SMTP | 5-10s | Conectar la instance al EmBoux (servicio de email transaccional). |
+| Crear DNS | 5-10s | `auth.acme.prysmid.com` apunta a tu instancia. |
+| Provisionar instancia | 30-60s | Levantar instancia dedicada, base de datos, key store. |
+| Configurar email | 5-10s | Conectar la instancia al servicio de email transaccional. |
 | Branding default | `<1s` | Logo "Powered by Prysm:ID" + paleta default. |
-| Cert TLS | 10-30s | Let's Encrypt para `auth.acme.prysmid.com`. |
+| Cert TLS | 10-30s | Emitir certificado para `auth.acme.prysmid.com`. |
 | Healthcheck | `<5s` | Validar que el endpoint OIDC responde. |
 | Marcar `active` | `<1s` | Listo. |
 
@@ -25,7 +25,7 @@ Mientras se provisiona vas a ver una pantalla con un **stepper en vivo** mostran
 
 ## Si la provisión falla
 
-A veces falla — generalmente por DNS de Cloudflare lento, instance Zitadel con cold start largo, o SMTP de EmBoux con quota. Cuando pasa, el workspace queda en `failed_provisioning` con un detalle del paso que falló:
+A veces falla — generalmente DNS lento, cold start largo, o quota del email transaccional. Cuando pasa, el workspace queda en `failed_provisioning` con un detalle del paso que falló:
 
 - **Recoverable**: click "Retry provisioning" en la pantalla de error. El slug se conserva.
 - **Si re-intenta y vuelve a fallar**: escribinos a soporte. Casi siempre es config de cuenta nueva (cuotas iniciales) que resolvemos manualmente.
