@@ -1,93 +1,80 @@
 ---
 title: Safe defaults
-description: What we block by default and how to elevate when truly needed. The philosophy behind the model.
+description: How Prysm:ID limits an agent's blast radius and what you have to confirm manually.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-Agents are very fast. That's good when you do the right thing and bad when you don't — mistakes scale too. Prysm:ID assumes that from the design and applies a "safe defaults" layer over the control plane an agent touches.
+Agents are fast. That's good when they do something right and bad when they do something wrong — errors scale too. The Prysm:ID stack limits blast radius in three layers: **authentication scoped to the human**, **human confirmation on destructive operations**, and **strict REST API parity** (no MCP "special modes" the API itself wouldn't allow).
 
-## Three rings of protection
+## Layer 1 — Authentication: the agent acts as you
 
-**1. Machine key scope.**
-Any action the scope doesn't allow fails with `403 forbidden_by_scope` before touching Stripe, before deleting anything, before changing anything. You pick the scope when creating the key.
+The MCP server (`@prysmid/mcp`) authenticates via [device flow (RFC 8628)](https://datatracker.ietf.org/doc/html/rfc8628). You sign in once on `auth.prysmid.com` and the server caches an `access_token` (~12 hours) + `refresh_token` (~30 days) at `~/.config/prysmid-mcp/token.json`.
 
-**2. Confirmation gates in the MCP server.**
-Destructive or expensive operations require an explicit `confirmed: true`. The agent's first call returns:
+Consequences:
 
-```json
-{
-  "requires_confirmation": true,
-  "confirmation_token": "ct_abc123",
-  "summary": "This will permanently delete workspace 'acme' and all 1,247 users.",
-  "irreversible": true
-}
-```
-
-The agent **cannot** self-confirm. It shows you the summary, waits for your OK, and only then re-calls with `confirmed: true, confirmation_token: ct_abc123`. This blocks the "the agent hallucinated and deleted production" failure class.
-
-**3. Dedicated control-plane rate limits.**
-A runaway agent trying to create 1000 workspaces hits a per-minute cap. See [rate limits](/en/reference/rate-limits/).
-
-## What requires human confirmation
-
-| Action | Why |
-|---|---|
-| `workspaces.delete` | Irreversible. Deletes a whole instance. |
-| `tenants.delete` | Irreversible. Loses tenant users. |
-| `apps.delete` | Breaks active logins for that app. |
-| `idps.remove` when it's the only IdP | Workspace would be left with no login method. |
-| `keys.create` with `workspace:admin` | Creating max-privilege keys deserves confirmation. |
-| `billing.set_plan` when **downgrading** | Can sharply reduce MAU quota. |
-| `branding.set_custom_domain` | Changes issuer; may break existing apps. |
-| `webhooks.delete` when it's the only active one | You'd lose event visibility. |
-
-## What **doesn't** require confirmation (and why)
-
-| Action | Why |
-|---|---|
-| Creating reversible things (workspaces, apps, IdPs) | If the agent over-creates, you delete. Low cost. |
-| `branding.set` | Changing the logo is not destructive; reversible in one click. |
-| `webhooks.create` | Adding callbacks doesn't break existing ones. |
-| Reading anything | Obvious. |
-| `billing.set_plan` when **upgrading** | Paying more never broke a customer. (Joke. But upgrade risk is low and reversible at period end.) |
-
-## Auditing agent actions
-
-In `app.prysmid.com → audit`, each action has an `actor`:
-
-- `actor=user:<email>` → a human did it (OIDC session).
-- `actor=key:<machine_key_id>` → a machine key did it.
-
-Filter by `actor:starts-with(key:)` and you see everything automated. If something weird shows up, you know immediately whether it was an agent and which.
-
-## How to *disable* a confirmation gate (if you really want)
-
-Sometimes you have a fully-automated batch workflow where the confirmation pause is noise. For those:
-
-```bash
-curl -X POST https://api.prysmid.com/v1/workspaces/$WS/machine-keys/$KEY_ID \
-  -d '{"unattended_mode": true}'
-```
-
-This **removes** confirmation gates for that specific key. It's an explicit trade-off: you gain automation, lose the safety net. Recommendations:
-
-- **Only on narrow-scope keys.** A `tenant:acme:write` key with `unattended_mode` is reasonable. A `workspace:admin` is not.
-- **Only with short expiration** (weeks, not years).
-- **Only on deterministic pipelines**, not interactive agents. A demo-provisioning cron yes; your personal Claude no.
+- **The agent can only operate workspaces you have access to.** It's not a universal "service key" — it's your credentials delegated via OAuth, so the server-side applies the same validations the dashboard does.
+- **Every workspace endpoint validates membership**. Even if the agent guesses someone else's workspace slug, the handler returns 404 (not 403, to avoid leaking existence) — same treatment as the dashboard.
+- **You can revoke any time.** Sign out from Prysm:ID or delete `token.json` and the agent loses auth.
+- **The audit log tags every action with `actor=user:<your-email>`.** There's no separate `bot` actor by design — you know what happened because the tool did it on your behalf.
 
 <Aside type="caution">
-If you pick `unattended_mode`, understand what you're doing. It's the difference between "the agent suggests and you confirm" and "the agent executes and you find out later via audit log".
+**There are no customer-facing "machine keys" today.** If you need a non-human service account for CI/automation, talk to support — the piece exists at the Zitadel layer but isn't a supported path for customer-side agents yet.
 </Aside>
 
-## What we're considering for the future
+## Layer 2 — Human confirmation on destructive ops
 
-- **Approval queues**: for teams where one agent proposes changes and *another* human approves (not the one talking to the agent).
-- **Anomaly detection**: automatic alerts when a machine key acts outside its historical pattern (anomalous volume, new operation class, weird hour).
-- **Per-tool fine-grained scopes**: today you have `workspace:write`, but you may want `apps:write` without `idps:write`. We discuss this on GitHub if you care.
+The official handoff prompts (Claude Code ES/EN, Antigravity ES/EN) explicitly instruct the agent:
+
+> For destructive actions (`delete_workspace`, `delete_oidc_app`, `delete_idp`), ask EXPLICIT confirmation before each call — I'd lose users + apps + IdPs irreversibly.
+
+The agent doesn't auto-confirm. If you say "no" or "wait", the agent stops.
+
+### Operations the prompt marks as destructive
+
+| Tool | Why |
+|---|---|
+| `delete_workspace` | Irreversible. Drops the entire Zitadel instance + DNS + SMTP. |
+| `delete_oidc_app` | Breaks any active logins of that app. |
+| `delete_idp` | If it was the only IdP and password+register was off, you'd leave the workspace without a sign-in method. |
+| `delete_user` | Loses sessions, historical attribution, etc. |
+| `set_spending_cap` when it reduces below current usage | May cut billing abruptly. |
+
+### Operations that DON'T require confirmation (and why)
+
+| Action | Why |
+|---|---|
+| Any reversible creation (`create_workspace`, `create_oidc_app`, `add_idp`) | If the agent creates one too many, you delete it. Low cost. |
+| Reads (`list_*`, `get_*`) | Obvious. |
+| `update_branding` | Changing logo / colors is non-destructive; reversible in one call. |
+| `update_login_policy` | Curated tools auto-promote the per-org override without touching other orgs; changes are reversible via PATCH. |
+| `set_spending_cap` upward | Paying more never broke a customer (cost: leaves overage cap higher, reversible). |
+
+## Layer 3 — Strict REST API parity
+
+**The MCP server has no "special modes."** Every MCP tool ultimately makes the same HTTP call the dashboard would to `api.prysmid.com`. This means:
+
+- **There's no MCP endpoint the browser couldn't hit.** If the dashboard won't let you delete X without a modal confirmation, the agent can't silently do it either — the handler 4xx's with the same validation.
+- **Rate limits are the same.** A runaway agent trying to create 1000 workspaces hits the same cap on the REST API, not a special MCP cap.
+- **There's a single audit log.** Both dashboard and agent activity appear in the same feed with the same `actor=user:<email>`.
+
+## Auditing what your agent did
+
+In `app.prysmid.com → audit` (when the panel ships — today via API), filter by:
+
+- **Your email** as actor → see everything that happened "as you", including agent actions.
+- **The agent's session time window** → all agent activity gets grouped.
+
+There's no separate `via_mcp` flag in the audit log because the agent *is* you via device flow. If you need to distinguish, mark a sandbox workspace vs your prod one, and only let agents work in the sandbox until you trust them.
+
+## Roadmap
+
+- **Approval queues**: for teams where an agent proposes changes and a *different* human approves (not the one talking to the agent). In design.
+- **Customer-facing service accounts**: machine keys with scoped permissions, explicit expiration, audit `actor=key:<id>`. Pending.
+- **Fine-grained per-tool scopes**: today the access_token has a broad scope (everything your account can see). We're debating whether a `read-only` scope for side-by-side agents makes sense.
 
 ## Philosophy
 
-> The agent is a first-class user. But "first-class" doesn't mean "no guardrails". It means **the same respect and intelligent distrust you'd apply to a new colleague with production access**.
+> The agent is a first-class user. But "first class" doesn't mean "no guardrails". It means **the same respect and intelligent distrust you'd apply to a new colleague with prod access**.
 
 The gates aren't there to slow you down — they're there so when your agent hallucinates one day, the blast radius is recoverable, not terminal.

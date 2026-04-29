@@ -22,7 +22,7 @@ Re-publicar la OpenAPI acá generaría drift. Mantenemos un solo source of truth
 Todas las llamadas a `api.prysmid.com/v1/*` requieren `Authorization: Bearer <token>`. El token puede ser:
 
 1. **Tu sesión humana** (cookie OIDC) — válido cuando tu navegador está logueado en `app.prysmid.com`. Útil para curl rápido.
-2. **Machine key access_token** — para uso programático y agentes. Ver [machine keys →](/agents/machine-keys/).
+2. **Device-flow access_token** — para agentes IA. El MCP server (`@prysmid/mcp`) lo obtiene automáticamente vía [device flow (RFC 8628)](https://datatracker.ietf.org/doc/html/rfc8628) y lo cachea en `~/.config/prysmid-mcp/token.json`. Ver [Conectar Claude Code →](/agents/quickstart-claude/).
 3. **Personal access token** (Pro+) — token long-lived asociado a tu cuenta humana. `Settings → API tokens` en el dashboard.
 
 ```bash

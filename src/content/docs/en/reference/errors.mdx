@@ -28,7 +28,7 @@ The REST API and MCP server return errors with the same shape:
 | 400 | `invalid_request` | Malformed parameter. Check `message` for detail. |
 | 400 | `validation_failed` | Field validation failure (slug too short, invalid hex color, etc). |
 | 401 | `unauthorized` | No token or expired token. |
-| 401 | `invalid_token` | Token doesn't sign with the expected key. Maybe you rotated the machine key. |
+| 401 | `invalid_token` | Token expired or doesn't sign with the expected JWKS. If it's from the MCP, delete `~/.config/prysmid-mcp/token.json` and let the server re-cache via device flow. |
 | 403 | `forbidden_by_scope` | Your token lacks scope for this action. |
 | 403 | `requires_confirmation` | Destructive op, missing `confirmed: true`. |
 | 404 | `not_found` | Resource doesn't exist or you can't see it. |

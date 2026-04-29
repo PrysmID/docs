@@ -1,106 +1,98 @@
 ---
 title: Catálogo de tools MCP
-description: Las operaciones disponibles para tu agente. Agrupadas por área. Cada una con shape de input/output.
+description: Las operaciones disponibles para tu agente, agrupadas por área. Lista canónica del @prysmid/mcp publicado.
 ---
 
-Esta es la lista canónica de tools que el `@prysmid/mcp` expone hoy. La mantenemos en paridad estricta con la API REST: cuando agregamos algo a la API, aparece acá automáticamente al siguiente release del MCP server.
+import { Aside } from '@astrojs/starlight/components';
 
-<details>
-<summary>Cómo el agente "ve" estos tools</summary>
+Esta es la lista de tools que `@prysmid/mcp` expone hoy. Cuando el MCP conecta con tu cliente (Claude Code, Antigravity, Cursor, etc.), le manda este catálogo en formato JSON-Schema — el LLM lo recibe en su context window y elige cuál llamar según la intención del usuario. Vos no pegás schemas; el agente los descubre solo.
 
-Cuando MCP conecta, el server le manda al cliente (Claude/GPT/etc) este catálogo en formato JSON-Schema. El LLM lo recibe en su context window y decide cuál llamar según la intención del usuario. No tenés que pegarle estos schemas vos — el agente los descubre solo.
+<Aside type="tip">
+La paridad con la API REST se mantiene automáticamente. La mayoría de las tools genéricas (CRUD de workspaces, apps, idps, users, branding, etc.) se generan a partir del OpenAPI spec de `api.prysmid.com`. Las tools "curated" (`setup_prysmid_workspace`, `enable_google_login`, `prysmid_setup_check`) son handwritten y orquestan varias llamadas para cumplir una intención clara.
+</Aside>
 
-</details>
+## Curated (alto nivel — lo que un agente naturalmente busca)
+
+| Tool | Hace |
+|---|---|
+| `setup_prysmid_workspace` | Crea un workspace nuevo y espera hasta que el provisioning termine (Zitadel + DNS + SMTP). Devuelve `auth_domain` listo para integrar. |
+| `enable_google_login` | Configura Google como IdP en un workspace **y** habilita external IdPs en el login policy. Idempotente — si Google ya está configurado, devuelve el IdP existente. |
+| `prysmid_setup_check` | Corre un checklist de readiness sobre un workspace (state=active, ≥1 OIDC app, users_can_sign_in, branding configurado, auth_strength razonable). Devuelve `verdict: ready` / `incomplete` con detalle por item. |
 
 ## Workspaces
 
 | Tool | Hace |
 |---|---|
-| `workspaces.list` | Lista los workspaces accesibles para tu machine key. |
-| `workspaces.get` | Detalle de un workspace por slug o id. |
-| `workspaces.create` | Crea un workspace nuevo. Args: `slug`, `display_name`, `plan` (`free`/`pro`). |
-| `workspaces.delete` | Borra un workspace. **Requiere confirmación humana**. |
+| `list_workspaces` | Lista los workspaces accesibles para tu cuenta. |
+| `get_workspace` | Detalle de un workspace por slug o id. |
+| `create_workspace` | Crea workspace. Args: `slug`, `display_name`, `plan` (`free`/`pro`). |
+| `update_workspace` | Edita display_name, plan, etc. |
+| `delete_workspace` | Borra el workspace. **Requiere confirmación humana**. |
+| `retry_provisioning` | Re-lanza provisioning si el workspace quedó en `provisioning_failed`. |
 
-## Tenants
-
-| Tool | Hace |
-|---|---|
-| `tenants.list` | Lista tenants dentro de un workspace. |
-| `tenants.create` | Crea un tenant. Args: `workspace_slug`, `slug`, `display_name`. |
-| `tenants.delete` | Borra un tenant. **Requiere confirmación humana**. |
-
-## OAuth Apps
+## OIDC apps
 
 | Tool | Hace |
 |---|---|
-| `apps.list` | Lista OAuth apps registradas en el workspace. |
-| `apps.create` | Registra app. Args: `name`, `redirect_uris[]`, `type` (`web`/`spa`/`mobile`). Devuelve `client_id` y `client_secret` (último visible una vez). |
-| `apps.update` | Edita redirect URIs, name, etc. |
-| `apps.rotate_secret` | Genera nuevo `client_secret`. El viejo queda válido 24h. |
-| `apps.delete` | Elimina app. **Requiere confirmación humana**. |
+| `list_apps` | Lista las OIDC apps registradas en el workspace. Devuelve `{items, total}`. |
+| `create_oidc_app` | Registra una app. Args: `name`, `redirect_uris[]`, `app_type` (`web`/`spa`/`native`), `dev_mode` (true para `http://localhost`). Devuelve `client_id` + `client_secret` (este último visible una sola vez). |
+| `delete_oidc_app` | Borra una app. **Requiere confirmación humana**. |
 
-## IdPs
+## Identity Providers (IdPs)
 
 | Tool | Hace |
 |---|---|
-| `idps.list` | Lista IdPs configurados. |
-| `idps.add_google` | Conecta Google OAuth. Args: `client_id`, `client_secret`. |
-| `idps.add_github` | Conecta GitHub OAuth. |
-| `idps.add_apple` | Conecta Sign in with Apple. Args: `team_id`, `key_id`, `services_id`, `private_key_p8`. |
-| `idps.add_saml` | Conecta IdP SAML. Args: `metadata_url` o `metadata_xml`. |
-| `idps.remove` | Quita un IdP. Sesiones existentes siguen vivas hasta expirar. |
+| `list_idps` | Lista IdPs configurados en el workspace. |
+| `add_idp` | Registra un IdP genérico. Args: `type` (`google`/`github`/`microsoft`/`oidc`), `name`, `client_id`, `client_secret`, opcional `issuer` (oidc), `tenant_id` (microsoft), `scopes[]`. Idempotente por `type`. |
+| `delete_idp` | Quita un IdP. Sesiones existentes siguen vivas hasta expirar. |
+
+## Login policy
+
+| Tool | Hace |
+|---|---|
+| `get_login_policy` | Lee la policy actual del workspace (allow_username_password, allow_register, allow_external_idp, force_mfa, etc.). |
+| `update_login_policy` | Edita la policy. Auto-promueve a override per-org si todavía heredaba el default del instance. |
 
 ## Branding
 
 | Tool | Hace |
 |---|---|
-| `branding.get` | Lee branding actual del workspace. |
-| `branding.set` | Setea logo / colores / footer toggle / custom CSS. |
-| `branding.set_custom_domain` | Solicita custom domain. Devuelve CNAME a configurar en tu DNS. |
+| `get_branding` | Lee branding actual (logo URL, primary_color, etc.). |
+| `update_branding` | Setea logo, colores, dark mode, custom CSS. |
+| `delete_logo` | Quita el logo y vuelve al default. |
 
-## Audit
+## Users
 
 | Tool | Hace |
 |---|---|
-| `audit.events` | Query del audit log de la instance. Args: `since`, `until`, `event_type`, `actor`. |
-| `audit.export` | Exporta a CSV. Devuelve URL pre-firmada con TTL de 1h. |
+| `list_users` | Lista usuarios del workspace. |
+| `invite_user` | Invita un usuario por email. Args: `email`, `role`, `preferred_language`. |
+| `delete_user` | Borra un usuario. **Requiere confirmación humana**. |
+
+## SMTP
+
+| Tool | Hace |
+|---|---|
+| `get_smtp` | Lee config SMTP actual del workspace (managed default vs. custom). |
+| `set_custom_smtp` | Override con tu propio SMTP (host, port, user, password, from_address). |
+| `revert_to_platform_default` | Vuelve al SMTP gestionado por Prysm:ID. |
 
 ## Billing
 
 | Tool | Hace |
 |---|---|
-| `billing.get_plan` | Plan actual + spending cap + MAU usage del período. |
-| `billing.set_plan` | Cambia plan. Upgrades aplican inmediato; downgrades se schedulean al fin del período. |
-| `billing.set_spending_cap` | Setea/quita el cap de overage. Pasale `null` para "unlimited". |
-| `billing.open_portal` | Devuelve URL del Stripe Customer Portal para que un humano gestione método de pago / cancelaciones. |
+| `get_billing` | Plan actual + spending cap + uso del período. |
+| `set_spending_cap` | Setea/quita el cap de overage. `null` para "unlimited". |
+| `start_billing_checkout` | Devuelve URL de Stripe Checkout para upgrade. Acción humana para confirmar pago. |
+| `start_billing_portal` | Devuelve URL del Stripe Customer Portal para gestionar método de pago / facturas / cancelaciones. |
 
-## Webhooks
+## Convenciones
 
-| Tool | Hace |
-|---|---|
-| `webhooks.list` | Lista webhooks configurados. |
-| `webhooks.create` | Crea webhook. Args: `url`, `events[]`. Devuelve secret una vez. |
-| `webhooks.rotate_secret` | Rota secret. |
-| `webhooks.delete` | Elimina. |
-| `webhooks.replay` | Reenvía un evento fallido por id. |
-
-## Machine keys (meta)
-
-| Tool | Hace |
-|---|---|
-| `keys.list` | Lista machine keys del workspace (la propia se incluye con flag `is_self`). |
-| `keys.create` | Crea machine key con scope. **Requiere confirmación humana** si scope ≥ `workspace:admin`. |
-| `keys.revoke` | Revoca una key. |
-
-## Convenciones de tool
-
-- **Naming**: `area.verb` (`workspaces.create`, no `create_workspace` ni `createWorkspace`). Consistente con el dashboard.
-- **Idempotencia**: las operaciones de creación aceptan `idempotency_key` opcional para que un agente pueda reintentar sin duplicar.
-- **Errores**: vienen con `code` machine-readable y `message` human-readable. El agente decide si reintenta, escala al humano, o aborta.
-- **Confirmation gates**: los tools destructivos (`delete`, `revoke`, `set_plan` cuando es downgrade) requieren confirmación explícita del humano. El MCP responde con `requires_confirmation: true` y el agente debe re-llamar con `confirmed: true` después de tu OK. [Más en safe-defaults →](/agents/safe-defaults/)
+- **Naming**: `verb_noun` (snake_case). El verbo señala la intención (`list`, `get`, `create`, `update`, `delete`, `add`, `enable`, `revert`...). Consistente con la API REST.
+- **Errores**: vienen con `code` machine-readable y `message` human-readable. Los 4xx surfacean al agente para que decida (reintentar, escalar al humano, abortar). Los 5xx aparecen como errores genéricos.
+- **Confirmación humana**: las tools destructivas (`delete_*`) requieren que el humano apruebe antes de cada llamada. El agente no auto-confirma — el handoff prompt lo deja explícito.
+- **Idempotencia**: las curated tools (`setup_prysmid_workspace`, `enable_google_login`, `add_idp` con `type` ya existente) son idempotentes por diseño — re-llamarlas converge al mismo estado en lugar de crear duplicados.
 
 ## Roadmap
 
-**Próximas tools (no shipped todavía)**: `users.search`, `users.create`, `users.suspend`, `sessions.list`, `sessions.revoke`. Están detrás del lift del MCP server a v0.2 — fase 15.5 del roadmap.
-
-Si te falta una operación que la API ya soporta pero el MCP todavía no — pedíla en GitHub: el lag se cierra rápido.
+Si te falta una operación que la API REST ya soporta pero el MCP todavía no expone, abrí un issue en [PrysmID/mcp-server](https://github.com/PrysmID/mcp-server/issues). El generator que produce las tools "raw" desde el OpenAPI spec se actualiza con cada release del platform — el lag se cierra rápido.

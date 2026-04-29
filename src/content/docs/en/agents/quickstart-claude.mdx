@@ -1,129 +1,86 @@
 ---
-title: Connect Claude in 60 seconds
-description: npx @prysmid/mcp in your Claude Desktop or Claude Code config. Done.
+title: Connect Claude Code in 60 seconds
+description: Copy the setup prompt from your dashboard, paste it in Claude Code, and the agent does the rest.
 ---
 
-import { Steps, Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+import { Steps, Aside } from '@astrojs/starlight/components';
 
-Connecting your Claude agent to Prysm:ID literally takes under a minute. Here's the full path.
+Setting up Prysm:ID from Claude Code is literally copy + paste. The dashboard generates an instructional prompt personalized to your workspace, and the agent walks through the steps until the MCP server is registered, authenticated, and your workspace is ready to integrate.
 
 <Steps>
 
-1. **Create a machine key.**
+1. **Create a workspace.**
 
-   In `app.prysmid.com → settings → machine keys`, click **New machine key**. Give it a name (`my-local-agent`), select the scope (`workspace:admin` to start), and download the JSON. You'll use it in the next step.
+   If you don't have one yet, go to [app.prysmid.com](https://app.prysmid.com) and create a workspace (slug + display name + plan). Provisioning takes ~30 seconds. Once it reaches state `active`, continue.
 
-   <Aside type="note">
-   The machine key is a **scoped service account**, not your personal API key. If compromised, you rotate it from the dashboard without affecting other integrations. [More on machine keys →](/en/agents/machine-keys/)
-   </Aside>
+2. **Copy the setup prompt from the dashboard.**
 
-2. **Configure Claude.**
+   In the **Overview** or **Workspaces** tab you'll see a **"Connect your agent"** section. Pick the workspace, language (ES or EN), and click **"Copy setup prompt"** on the **Claude Code** card.
 
-   <Tabs syncKey="claude-app">
-   <TabItem label="Claude Desktop">
-   Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+   The prompt comes with your `display_name`, `slug`, and `auth_domain` already interpolated — no placeholders to fill in.
 
-   ```json
-   {
-     "mcpServers": {
-       "prysmid": {
-         "command": "npx",
-         "args": ["-y", "@prysmid/mcp"],
-         "env": {
-           "PRYSMID_MACHINE_KEY_PATH": "/Users/you/.prysmid/key.json"
-         }
-       }
-     }
-   }
-   ```
+3. **Paste it into a fresh Claude Code session.**
 
-   Restart Claude. When it boots, you'll see "prysmid" in the tools list (hammer icon).
-   </TabItem>
+   Open Claude Code in any folder and paste the full prompt. The agent will:
 
-   <TabItem label="Claude Code">
-   In `~/.claude/mcp.json` (or via the CLI):
+   - Check Node ≥ 20 and the `claude` CLI
+   - Back up your `~/.claude.json`
+   - Register the MCP server with `claude mcp add --scope user prysmid -- npx -y @prysmid/mcp`
+   - Ask you to open a terminal and run `npx -y @prysmid/mcp` once to complete the **device flow** (URL + 8-character code in `XXXX-XXXX` format that you confirm in the browser)
+   - Ask you to restart Claude Code so it picks up the MCP
+   - Verify the tools appear and authentication is OK
 
-   ```bash
-   claude mcp add prysmid -- npx -y @prysmid/mcp
-   ```
+4. **The agent continues with the conversational setup.**
 
-   And configure the env var:
+   Once the MCP is connected, the same prompt continues to guide the agent through:
 
-   ```bash
-   export PRYSMID_MACHINE_KEY_PATH=/path/to/key.json
-   ```
+   - Calling `prysmid_setup_check` and showing you what's missing
+   - Asking for Google OAuth credentials (if you want Google login) and configuring it with `enable_google_login`
+   - Creating your product's OIDC app with `create_oidc_app`
+   - Generating the wiring for your framework (Next.js + Auth.js, FastAPI + Authlib, etc.) in your repo, including a `.env.local` with `PRYSMID_ISSUER`, `PRYSMID_CLIENT_ID`, `PRYSMID_CLIENT_SECRET`, `PRYSMID_REDIRECT_URI`
+   - Re-running `prysmid_setup_check` and reporting `verdict: ready` once everything is wired
 
-   `claude /mcp` to verify the connection.
-   </TabItem>
-
-   <TabItem label="Cursor / others">
-   Any MCP client supports the standard pattern:
-
-   ```json
-   {
-     "mcpServers": {
-       "prysmid": {
-         "command": "npx",
-         "args": ["-y", "@prysmid/mcp"],
-         "env": {
-           "PRYSMID_MACHINE_KEY_PATH": "/path/to/key.json"
-         }
-       }
-     }
-   }
-   ```
-
-   If your client doesn't support env vars, pass the key inline with `--key-file`.
-   </TabItem>
-   </Tabs>
-
-3. **Test.**
-
-   Ask Claude something simple:
-
-   > "List my workspaces in Prysm:ID."
-
-   Claude calls the `workspaces.list` tool, gets the JSON, shows you a table. If this works, everything else works.
+   Your role during this: paste credentials when asked, and confirm destructive actions. The agent doesn't make up redirect URIs or app names — it asks.
 
 </Steps>
 
-## What to ask Claude (examples)
+<Aside type="note">
+**Why device flow and not API keys or pasted tokens?** The MCP server uses the [device authorization grant (RFC 8628)](https://datatracker.ietf.org/doc/html/rfc8628) — the same pattern as GitHub CLI, AWS CLI v2, gcloud auth login. You sign in once in the browser (where you're already logged into Google/GitHub/email), and the server stores the `access_token` (~12 hours) plus a `refresh_token` (renewable up to the IdP's limit, typically 30 days) at `~/.config/prysmid-mcp/token.json`. No long credentials in config files, nothing committable in the repo, and you can revoke access from your Prysm:ID session at any time.
+</Aside>
 
-These prompts the MCP server understands without effort:
+## Other agents (Antigravity, Cursor, etc.)
 
-> "Create a new workspace called `acme-test`, free plan."
+The dashboard also has a prompt for **Google Antigravity** (same flow, different registration command). For generic MCP clients (Cursor, Claude Desktop, others), the panel has a manual JSON snippet:
 
-> "In workspace `acme`, register an OAuth app called `My SaaS Dev` with redirect_uri `http://localhost:3000/auth/callback`."
+```jsonc
+{
+  "mcpServers": {
+    "prysmid": {
+      "command": "npx",
+      "args": ["-y", "@prysmid/mcp"]
+    }
+  }
+}
+```
 
-> "Connect Google as an IdP on workspace `acme`. The OAuth credentials are already in my env vars as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`."
+Paste it into your MCP client's config, restart, and the first tool call triggers the device flow.
 
-> "Show me the last 20 logins on workspace `acme` over the last 24 hours."
+## Troubleshooting
 
-> "Upload the logo from `~/Downloads/acme-logo.png` to workspace `acme` and set the primary color to `#FF6B6B`."
+**The agent reports `401 Unauthorized` on the first tool call.**
+The device flow didn't complete. Go back to the prompt's step "open a terminal and run `npx -y @prysmid/mcp`" — confirm the URL in the browser, wait until the terminal prints `device flow login complete`.
 
-> "Move `acme` to Pro plan with a $200 spending cap."
+**`claude mcp list` shows `prysmid: ✗ Failed`.**
+Check Node ≥ 20 (`node --version`) and npm connectivity (`npm ping`). The MCP can't start without those two.
 
-## Typical workflows
+**The Claude Code session hangs without ever asking for device flow.**
+Claude Code launches the MCP as a stdio subprocess, and stderr isn't a TTY — so the device flow prompt won't appear unless you pre-cache it in a real terminal. The dashboard prompt includes this step explicitly — follow it in order.
 
-**A new enterprise customer signs**:
-> "In workspace `my-saas-prod`, create a tenant called `bigcorp`, connect Okta as IdP using these credentials [...], and upload bigcorp.png as the logo."
+**The agent wants to delete something (`delete_workspace`, `delete_oidc_app`, `delete_idp`).**
+Those tools require explicit confirmation from you. If you don't want it deleted, say "no" — the agent won't auto-confirm.
 
-**Audit comes around**:
-> "For workspace `my-saas-prod`, export the last 30 days of audit log as CSV."
+## Next steps
 
-**Something's broken in production**:
-> "Show failed webhooks for workspace `my-saas-prod` in the last 6 hours and why they failed."
-
-## If something fails
-
-**Claude says "I don't have access to a Prysmid tool".**
-MCP config didn't load. Fully restart Claude (not just close the window — actual `Quit`). Verify the config file path.
-
-**`PRYSMID_MACHINE_KEY_PATH not found`.**
-The env var didn't reach Claude's subprocess. On macOS, launching Claude from Finder doesn't inherit your shell env. Try launching from terminal: `open -a Claude`.
-
-**`401 Unauthorized` on the first tool call.**
-Machine key expired or was revoked. Generate a new one from the dashboard and update the path.
-
-**Claude calls the tool but says "I'm not sure if you want to do this".**
-The tool has `requiresConfirmation: true` (the destructive ones do). Approve explicitly with "Yes, proceed".
+- [Full MCP tools catalog](/en/agents/tools/) — everything the agent can do
+- [Safe defaults](/en/agents/safe-defaults/) — what we block by default and why
+- [Control plane architecture](/en/concepts/architecture/) — where the MCP lives in the stack

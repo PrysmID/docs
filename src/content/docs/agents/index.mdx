@@ -32,10 +32,10 @@ MCP (Model Context Protocol) resuelve esto: tu agente recibe el catálogo de too
 
 ## Lo que NO puede hacer (y por qué)
 
-- **Cambiar la cuenta de pago en Stripe** — eso requiere acción humana en el Customer Portal.
+- **Cambiar la cuenta de pago en Stripe** — requiere acción humana en el Customer Portal (el MCP solo te da la URL via `start_billing_portal`).
 - **Ver passwords** — los passwords ni hasheados salen de la instance.
-- **Borrar el workspace** sin un confirmation token humano.
-- **Operar workspaces de otra organización** — la machine key está scopeada.
+- **Borrar workspaces, OIDC apps, IdPs o users** sin tu confirmación explícita en el chat.
+- **Operar workspaces que no son tuyos** — el `access_token` del device flow está atado a tu cuenta, así que cualquier workspace al que vos no tenés acceso retorna 404.
 
 [Modelo de "safe defaults" →](/agents/safe-defaults/)
 
@@ -43,9 +43,9 @@ MCP (Model Context Protocol) resuelve esto: tu agente recibe el catálogo de too
 
 <CardGrid>
   <LinkCard
-    title="Conectar Claude Desktop en 60 segundos"
+    title="Conectar Claude Code en 60 segundos"
     href="/agents/quickstart-claude/"
-    description="npx @prysmid/mcp + dos líneas en claude_desktop_config.json. Listo."
+    description="Copiá el setup prompt desde tu dashboard y pegalo en Claude Code. El agente se encarga del resto."
   />
   <LinkCard
     title="Catálogo de tools"
@@ -53,14 +53,9 @@ MCP (Model Context Protocol) resuelve esto: tu agente recibe el catálogo de too
     description="Las operaciones disponibles, agrupadas por área."
   />
   <LinkCard
-    title="Machine keys"
-    href="/agents/machine-keys/"
-    description="Service accounts con scopes para tu agente."
-  />
-  <LinkCard
     title="Safe defaults"
     href="/agents/safe-defaults/"
-    description="Qué bloqueamos por default y cómo elevar permisos cuando es necesario."
+    description="Cómo Prysm:ID limita el blast radius de un agente y qué tenés que confirmar manualmente."
   />
 </CardGrid>
 

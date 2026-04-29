@@ -112,7 +112,6 @@ export default defineConfig({
             { slug: 'agents' },
             { slug: 'agents/quickstart-claude' },
             { slug: 'agents/tools' },
-            { slug: 'agents/machine-keys' },
             { slug: 'agents/safe-defaults' },
           ],
         },

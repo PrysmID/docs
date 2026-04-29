@@ -109,7 +109,7 @@ curl -X POST https://auth.acme.prysmid.com/oauth/v2/token \
   -d "scope=openid"
 ```
 
-You won't get an `id_token` (no user), just `access_token`. See also [machine keys for agents](/en/agents/machine-keys/) if what you want is for an AI agent to operate the control plane.
+You won't get an `id_token` (no user), just `access_token`. If what you want is for an AI agent to operate the control plane, see [Connect Claude Code →](/en/agents/quickstart-claude/) — the MCP server (`@prysmid/mcp`) uses device flow and delegates the permissions of the human who signed in, not separate machine credentials.
 
 ## Logout
 

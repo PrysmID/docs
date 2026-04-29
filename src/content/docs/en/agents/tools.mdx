@@ -1,106 +1,98 @@
 ---
 title: MCP tool catalog
-description: The operations available to your agent. Grouped by area. Each one with input/output shape.
+description: The operations available to your agent, grouped by area. Canonical list from the published @prysmid/mcp.
 ---
 
-This is the canonical list of tools `@prysmid/mcp` exposes today. We keep strict parity with the REST API: when we add something to the API, it shows up here automatically on the next MCP server release.
+import { Aside } from '@astrojs/starlight/components';
 
-<details>
-<summary>How the agent "sees" these tools</summary>
+This is the list of tools `@prysmid/mcp` exposes today. When the MCP connects to your client (Claude Code, Antigravity, Cursor, etc.), it sends this catalog as JSON-Schema — the LLM receives it in its context window and picks which one to call based on user intent. You don't paste schemas; the agent discovers them automatically.
 
-When MCP connects, the server sends the client (Claude/GPT/etc) this catalog as JSON-Schema. The LLM gets it in its context window and decides which to call based on user intent. You don't paste these schemas yourself — the agent discovers them.
+<Aside type="tip">
+Parity with the REST API is maintained automatically. Most generic tools (CRUD on workspaces, apps, idps, users, branding, etc.) are generated from the OpenAPI spec at `api.prysmid.com`. The "curated" tools (`setup_prysmid_workspace`, `enable_google_login`, `prysmid_setup_check`) are handwritten and orchestrate multiple calls behind a single intent.
+</Aside>
 
-</details>
+## Curated (high-level — what an agent naturally reaches for)
+
+| Tool | What it does |
+|---|---|
+| `setup_prysmid_workspace` | Creates a new workspace and waits until provisioning completes (Zitadel + DNS + SMTP). Returns a live `auth_domain` ready to integrate. |
+| `enable_google_login` | Configures Google as an IdP on a workspace **and** flips `allow_external_idp=true` in the login policy. Idempotent — if Google is already configured, returns the existing IdP. |
+| `prysmid_setup_check` | Runs a readiness checklist on a workspace (state=active, ≥1 OIDC app, users_can_sign_in, branding configured, auth_strength reasonable). Returns `verdict: ready` / `incomplete` with per-item detail. |
 
 ## Workspaces
 
-| Tool | Does |
+| Tool | What it does |
 |---|---|
-| `workspaces.list` | Lists workspaces accessible to your machine key. |
-| `workspaces.get` | Detail of one workspace by slug or id. |
-| `workspaces.create` | Creates a new workspace. Args: `slug`, `display_name`, `plan` (`free`/`pro`). |
-| `workspaces.delete` | Deletes a workspace. **Requires human confirmation**. |
+| `list_workspaces` | Lists workspaces accessible to your account. |
+| `get_workspace` | Workspace detail by slug or id. |
+| `create_workspace` | Creates a workspace. Args: `slug`, `display_name`, `plan` (`free`/`pro`). |
+| `update_workspace` | Edits display_name, plan, etc. |
+| `delete_workspace` | Deletes the workspace. **Requires human confirmation**. |
+| `retry_provisioning` | Re-runs provisioning if the workspace is stuck in `provisioning_failed`. |
 
-## Tenants
+## OIDC apps
 
-| Tool | Does |
+| Tool | What it does |
 |---|---|
-| `tenants.list` | Lists tenants inside a workspace. |
-| `tenants.create` | Creates a tenant. Args: `workspace_slug`, `slug`, `display_name`. |
-| `tenants.delete` | Deletes a tenant. **Requires human confirmation**. |
+| `list_apps` | Lists OIDC apps registered in the workspace. Returns `{items, total}`. |
+| `create_oidc_app` | Registers an app. Args: `name`, `redirect_uris[]`, `app_type` (`web`/`spa`/`native`), `dev_mode` (true for `http://localhost`). Returns `client_id` + `client_secret` (the latter shown once). |
+| `delete_oidc_app` | Deletes an app. **Requires human confirmation**. |
 
-## OAuth Apps
+## Identity Providers (IdPs)
 
-| Tool | Does |
+| Tool | What it does |
 |---|---|
-| `apps.list` | Lists registered OAuth apps in the workspace. |
-| `apps.create` | Registers app. Args: `name`, `redirect_uris[]`, `type` (`web`/`spa`/`mobile`). Returns `client_id` and `client_secret` (last visible once). |
-| `apps.update` | Edits redirect URIs, name, etc. |
-| `apps.rotate_secret` | Generates new `client_secret`. Old one valid for 24h. |
-| `apps.delete` | Removes app. **Requires human confirmation**. |
+| `list_idps` | Lists IdPs configured in the workspace. |
+| `add_idp` | Registers a generic IdP. Args: `type` (`google`/`github`/`microsoft`/`oidc`), `name`, `client_id`, `client_secret`, optional `issuer` (oidc), `tenant_id` (microsoft), `scopes[]`. Idempotent on `type`. |
+| `delete_idp` | Removes an IdP. Existing sessions stay valid until expiry. |
 
-## IdPs
+## Login policy
 
-| Tool | Does |
+| Tool | What it does |
 |---|---|
-| `idps.list` | Lists configured IdPs. |
-| `idps.add_google` | Connects Google OAuth. Args: `client_id`, `client_secret`. |
-| `idps.add_github` | Connects GitHub OAuth. |
-| `idps.add_microsoft` | Connects Microsoft / Azure AD. |
-| `idps.add_saml` | Connects SAML IdP. Args: `metadata_url` or `metadata_xml`. |
-| `idps.remove` | Removes an IdP. Existing sessions stay alive until expiry. |
+| `get_login_policy` | Reads the workspace's current policy (allow_username_password, allow_register, allow_external_idp, force_mfa, etc.). |
+| `update_login_policy` | Edits the policy. Auto-promotes to a per-org override if it was still inheriting the instance default. |
 
 ## Branding
 
-| Tool | Does |
+| Tool | What it does |
 |---|---|
-| `branding.get` | Reads current workspace branding. |
-| `branding.set` | Sets logo / colors / footer toggle / custom CSS. |
-| `branding.set_custom_domain` | Requests custom domain. Returns CNAME to configure in your DNS. |
+| `get_branding` | Reads current branding (logo URL, primary_color, etc.). |
+| `update_branding` | Sets logo, colors, dark mode, custom CSS. |
+| `delete_logo` | Removes the logo and reverts to the default. |
 
-## Audit
+## Users
 
-| Tool | Does |
+| Tool | What it does |
 |---|---|
-| `audit.events` | Queries the instance's audit log. Args: `since`, `until`, `event_type`, `actor`. |
-| `audit.export` | Exports to CSV. Returns pre-signed URL with 1h TTL. |
+| `list_users` | Lists workspace users. |
+| `invite_user` | Invites a user by email. Args: `email`, `role`, `preferred_language`. |
+| `delete_user` | Deletes a user. **Requires human confirmation**. |
+
+## SMTP
+
+| Tool | What it does |
+|---|---|
+| `get_smtp` | Reads the workspace's current SMTP config (managed default vs. custom). |
+| `set_custom_smtp` | Override with your own SMTP (host, port, user, password, from_address). |
+| `revert_to_platform_default` | Goes back to the Prysm:ID-managed SMTP. |
 
 ## Billing
 
-| Tool | Does |
+| Tool | What it does |
 |---|---|
-| `billing.get_plan` | Current plan + spending cap + period MAU usage. |
-| `billing.set_plan` | Changes plan. Upgrades apply immediately; downgrades schedule at period end. |
-| `billing.set_spending_cap` | Sets/unsets overage cap. Pass `null` for "unlimited". |
-| `billing.open_portal` | Returns Stripe Customer Portal URL for a human to manage payment method / cancellations. |
+| `get_billing` | Current plan + spending cap + period usage. |
+| `set_spending_cap` | Sets/removes the overage cap. `null` for "unlimited". |
+| `start_billing_checkout` | Returns a Stripe Checkout URL for an upgrade. Human action required to confirm payment. |
+| `start_billing_portal` | Returns a Stripe Customer Portal URL to manage payment method / invoices / cancellations. |
 
-## Webhooks
+## Conventions
 
-| Tool | Does |
-|---|---|
-| `webhooks.list` | Lists configured webhooks. |
-| `webhooks.create` | Creates webhook. Args: `url`, `events[]`. Returns secret once. |
-| `webhooks.rotate_secret` | Rotates secret. |
-| `webhooks.delete` | Removes. |
-| `webhooks.replay` | Replays a failed event by id. |
-
-## Machine keys (meta)
-
-| Tool | Does |
-|---|---|
-| `keys.list` | Lists machine keys in the workspace (the calling key included with `is_self` flag). |
-| `keys.create` | Creates machine key with scope. **Requires human confirmation** if scope ≥ `workspace:admin`. |
-| `keys.revoke` | Revokes a key. |
-
-## Tool conventions
-
-- **Naming**: `area.verb` (`workspaces.create`, not `create_workspace` or `createWorkspace`). Consistent with the dashboard.
-- **Idempotency**: create operations accept an optional `idempotency_key` so an agent can retry without duplicating.
-- **Errors**: come with machine-readable `code` and human-readable `message`. The agent decides whether to retry, escalate to the human, or abort.
-- **Confirmation gates**: destructive tools (`delete`, `revoke`, `set_plan` when downgrading) require explicit human confirmation. MCP returns `requires_confirmation: true` and the agent must re-call with `confirmed: true` after your OK. [More in safe-defaults →](/en/agents/safe-defaults/)
+- **Naming**: `verb_noun` (snake_case). The verb signals intent (`list`, `get`, `create`, `update`, `delete`, `add`, `enable`, `revert`…). Consistent with the REST API.
+- **Errors**: come with a machine-readable `code` and a human-readable `message`. 4xx surfaces to the agent so it can decide (retry, escalate, abort). 5xx appears as a generic error.
+- **Human confirmation**: destructive tools (`delete_*`) require explicit human approval before each call. The agent doesn't auto-confirm — the handoff prompt makes that explicit.
+- **Idempotency**: curated tools (`setup_prysmid_workspace`, `enable_google_login`, `add_idp` with an existing `type`) are idempotent by design — re-running them converges to the same state instead of creating duplicates.
 
 ## Roadmap
 
-**Coming tools (not shipped yet)**: `users.search`, `users.create`, `users.suspend`, `sessions.list`, `sessions.revoke`. Behind the MCP server lift to v0.2 — phase 15.5 of the roadmap.
-
-If you're missing an operation the API supports but MCP doesn't yet — file it on GitHub: the lag closes fast.
+If you're missing an operation the REST API already supports but the MCP doesn't expose, open an issue at [PrysmID/mcp-server](https://github.com/PrysmID/mcp-server/issues). The generator that produces "raw" tools from the OpenAPI spec ships with every platform release — the lag closes fast.

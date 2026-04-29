@@ -32,10 +32,10 @@ MCP (Model Context Protocol) solves this: your agent receives the tool catalog o
 
 ## What it can't do (and why)
 
-- **Change the Stripe payment method** — requires human action in the Customer Portal.
+- **Change the Stripe payment method** — requires human action in the Customer Portal (the MCP only hands you the URL via `start_billing_portal`).
 - **Read passwords** — passwords don't leave the instance, not even hashed.
-- **Delete the workspace** without a human confirmation token.
-- **Operate workspaces from another organization** — the machine key is scoped.
+- **Delete workspaces, OIDC apps, IdPs, or users** without your explicit confirmation in the chat.
+- **Operate workspaces that aren't yours** — the device-flow `access_token` is bound to your account, so any workspace you don't have access to returns 404.
 
 [Safe-defaults model →](/en/agents/safe-defaults/)
 
@@ -43,9 +43,9 @@ MCP (Model Context Protocol) solves this: your agent receives the tool catalog o
 
 <CardGrid>
   <LinkCard
-    title="Connect Claude Desktop in 60 seconds"
+    title="Connect Claude Code in 60 seconds"
     href="/en/agents/quickstart-claude/"
-    description="npx @prysmid/mcp + two lines in claude_desktop_config.json. Done."
+    description="Copy the setup prompt from your dashboard and paste it into Claude Code. The agent does the rest."
   />
   <LinkCard
     title="Tool catalog"
@@ -53,14 +53,9 @@ MCP (Model Context Protocol) solves this: your agent receives the tool catalog o
     description="Available operations, grouped by area."
   />
   <LinkCard
-    title="Machine keys"
-    href="/en/agents/machine-keys/"
-    description="Scoped service accounts for your agent."
-  />
-  <LinkCard
     title="Safe defaults"
     href="/en/agents/safe-defaults/"
-    description="What we block by default and how to elevate when needed."
+    description="How Prysm:ID limits an agent's blast radius and what you have to confirm manually."
   />
 </CardGrid>
 
