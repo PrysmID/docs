@@ -46,7 +46,7 @@ Cuando MCP conecta, el server le manda al cliente (Claude/GPT/etc) este catálog
 | `idps.list` | Lista IdPs configurados. |
 | `idps.add_google` | Conecta Google OAuth. Args: `client_id`, `client_secret`. |
 | `idps.add_github` | Conecta GitHub OAuth. |
-| `idps.add_microsoft` | Conecta Microsoft / Azure AD. |
+| `idps.add_apple` | Conecta Sign in with Apple. Args: `team_id`, `key_id`, `services_id`, `private_key_p8`. |
 | `idps.add_saml` | Conecta IdP SAML. Args: `metadata_url` o `metadata_xml`. |
 | `idps.remove` | Quita un IdP. Sesiones existentes siguen vivas hasta expirar. |
 

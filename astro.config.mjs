@@ -92,6 +92,7 @@ export default defineConfig({
             { slug: 'concepts/workspaces' },
             { slug: 'concepts/authentication-flow' },
             { slug: 'concepts/security-model' },
+            { slug: 'concepts/email-delivery' },
           ],
         },
         {

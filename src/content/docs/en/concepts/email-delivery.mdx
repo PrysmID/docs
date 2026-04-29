@@ -1,0 +1,107 @@
+---
+title: Email delivery
+description: Every Prysm:ID workspace ships with managed SMTP via Emboux. How it works, how to monitor deliverability, and how to bring your own SMTP when ready.
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+Every new workspace needs to send transactional email: signup verification, password reset, magic links, invitations. By default, Prysm:ID configures that SMTP for you during provisioning — no DKIM rotations to babysit, no extra account to open.
+
+## What gets configured automatically
+
+When you create a workspace, during the 60-90s of provisioning we do this for you:
+
+<Steps>
+
+1. We register the subdomain `{your-slug}.auth.prysmid.com` with our email provider **Emboux**.
+
+2. We create a dedicated mailbox `noreply@{your-slug}.auth.prysmid.com` with its own credential — that credential lives only in your instance, encrypted.
+
+3. We configure the SMTP provider on your auth engine pointing to Emboux with that credential.
+
+4. We enable the email-authentication DNS records (SPF, DKIM, tracking CNAME) on your subdomain.
+
+</Steps>
+
+Net result: when an end-user of your app requests a magic link or password reset, they get a DKIM-signed email with proper SPF, from a domain matching your workspace. No work from you.
+
+<Aside type="tip">
+**Why Emboux instead of bring-your-own SMTP from day one**: rather than asking you to open an external account, configure DNS in four places, and warm up an IP, we do it for you. The difference is "your first email takes 4 hours to be ready" vs "your first email leaves 2 minutes after signup". When you're ready to move this to your own infrastructure, see [BYO SMTP](#byo-smtp) below.
+</Aside>
+
+## What emails go through this SMTP
+
+The auth engine fires emails in these cases. All go through managed SMTP by default:
+
+| Event | When |
+|---|---|
+| Email verification | New user signs up and the flow requires it |
+| Password reset | User initiates "forgot password" flow |
+| Magic link login | User requests passwordless login |
+| Tenant invitation | You invite an end-user into your instance |
+| MFA enrollment | User sets up MFA and gets backup codes |
+| Email change | User updates their account email |
+
+Marketing emails, onboarding sequences, or any non-transactional comms **don't go through here** — that's your app's job, with whichever provider you pick.
+
+## Monitor deliverability
+
+Your dashboard has an **Email** tab inside the workspace showing:
+
+- Sent volume in the last 30 days
+- Bounce rate (hard + soft)
+- Spam reports rate
+- Last 100 sends with recipient, subject, event, and status (delivered / bounced / deferred)
+
+If sustained bounce rate goes above 5%, we alert the workspace owner. That usually means a poorly-maintained list on your app's side — invalid addresses the auth engine is trying to notify.
+
+## BYO SMTP
+
+When you grow and want to control the sender domain with your own infrastructure (typical in Pro/Enterprise so emails go from `noreply@yourdomain.com` instead of `noreply@{slug}.auth.prysmid.com`), you can configure your own SMTP:
+
+`Dashboard → Workspace → Email → Use my own SMTP`
+
+You'll need:
+
+- **Host** and **port** (typically 465 TLS or 587 STARTTLS)
+- **Username** and **password**
+- **From address** verified at your provider
+- **Reply-to** (optional)
+
+<Aside type="caution">
+Before flipping BYO SMTP on, make sure SPF + DKIM + DMARC are configured on the sender domain. If your emails get spam-marked, end-users in your app never finish verification — and that looks like "the product is broken".
+</Aside>
+
+Once you flip BYO, **managed SMTP turns off immediately**: the next email goes through your provider. If your config fails, the auth engine logs the errors in the audit log and notifies you — you can switch back to managed at any time.
+
+## Custom sender domain on managed SMTP
+
+If you want emails to go from your own domain (e.g. `noreply@yourapp.com` instead of `noreply@acme.auth.prysmid.com`) while staying on managed SMTP, you need **Pro or Enterprise** plan with a custom domain enabled:
+
+`Dashboard → Workspace → Email → Custom sender domain`
+
+We give you the exact DNS records to paste in your zone (SPF, DKIM, MX if you want replies somewhere). We poll the records every 30 seconds for up to 24h. Once green, emails go from your domain.
+
+## Error recovery
+
+If an email fails to deliver:
+
+- **Hard bounce** (invalid address, nonexistent domain): the auth engine logs it and, after 3 hard bounces on the same address within 7 days, marks the user `email_unreachable`. Audit log and `user.email_unreachable` webhooks notify you.
+- **Soft bounce** (mailbox full, transient server issue): we retry up to 4 times over 24h with exponential backoff.
+- **Spam report**: logged in the audit log + immediate alert to the workspace owner.
+
+If managed SMTP has a generalized outage, we notify via the [status page](https://prysmid.com/status) and the plan-applicable SLA kicks in.
+
+## FAQ
+
+**Can I disable emails entirely?**
+No — the auth engine needs them for critical flows like password reset. What you can do is disable password-based login and force IdP-only — then the only emails are invitations and MFA.
+
+**How many emails are included in my plan?**
+Free: 1,000/month per workspace. Pro: 100,000/month included, $0.0001 per additional email. Enterprise: negotiable. Very high volume should migrate to BYO SMTP — comes out cheaper and gives you control of the sender domain.
+
+**Can you read my emails?**
+The payload transits through Emboux's infrastructure (operated by the same team as Prysm:ID). We don't routinely inspect them. Headers (from, to, subject, status) we do log for deliverability tracking — that data lives in your dashboard and is purged at 90 days.
+
+**Is it GDPR / LGPD compliant for end-user data?**
+Yes, regarding transit and processing. Enterprise customers get specific DPA addenda. Free and Pro plans follow the public terms at `prysmid.com/privacy`.

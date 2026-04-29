@@ -1,11 +1,11 @@
 ---
 title: Conectar IdPs
-description: Google, GitHub, Microsoft y SAML. Paso a paso desde el dashboard.
+description: Google, GitHub, Apple y SAML. Paso a paso desde el dashboard.
 ---
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
 
-Un **IdP** (Identity Provider) externo le permite a tus usuarios loguearse con su cuenta de Google, GitHub, Microsoft, o el IdP corporativo de su empresa (SAML / OIDC). Para tu workspace, agregar un IdP es:
+Un **IdP** (Identity Provider) externo le permite a tus usuarios loguearse con su cuenta de Google, GitHub, Apple, o el IdP corporativo de su empresa (SAML / OIDC). Para tu workspace, agregar un IdP es:
 
 `Dashboard → IdPs → Add provider → elegí`
 
@@ -34,21 +34,20 @@ Vas a necesitar `client_id` y `client_secret` del provider. Cómo obtenerlos var
 GitHub no devuelve `email` por default si el user lo tiene privado. Pedí scope `user:email` y resolvelo en tu lado.
 
 </TabItem>
-<TabItem label="Microsoft / Azure AD">
+<TabItem label="Apple">
 
-1. [Azure portal → Azure Active Directory → App registrations → New registration](https://portal.azure.com).
-2. **Redirect URI** (Web): `https://auth.<tu-slug>.prysmid.com/idps/callback`.
-3. **Certificates & secrets → New client secret** → copiá value.
-4. **Application (client) ID**: copiá del overview.
-5. **Supported account types**: elegí "Multitenant" si querés que cualquier user de Microsoft entre, o "Single tenant" si solo permitís tu org.
-6. Dashboard Prysm:ID → pegá ambos.
+1. [Apple Developer Console → Certificates, Identifiers & Profiles → Identifiers → Services IDs → New](https://developer.apple.com/account/resources/identifiers/list/serviceId).
+2. Configurá un **Sign in with Apple** Services ID. **Return URL** (Web): `https://auth.<tu-slug>.prysmid.com/idps/callback`.
+3. Generá una **Sign in with Apple key** (Keys → New). Descargá el `.p8` (única vez).
+4. Anotá: **Team ID** (Membership → Team ID), **Key ID**, **Services ID** (= client_id).
+5. Dashboard Prysm:ID → Add Apple → pegá Team ID + Key ID + Services ID + contenido del `.p8`. Test → activate.
 
-Si tu cliente enterprise te pide "que solo entren users de su tenant Azure", configurás un `tenant_id` específico en la sección avanzada.
+Apple Sign In requiere HTTPS público para el callback (no funciona contra `localhost`). Para development, usá un dominio Cloudflare Tunnel o un workspace de prueba.
 
 </TabItem>
 <TabItem label="SAML">
 
-Para IdPs SAML (Okta, OneLogin, Azure AD vía SAML, etc):
+Para IdPs SAML (Okta, OneLogin, etc):
 
 1. En tu IdP, creá una "SAML application".
 2. **ACS URL** (Assertion Consumer Service): `https://auth.<tu-slug>.prysmid.com/saml/acs`.

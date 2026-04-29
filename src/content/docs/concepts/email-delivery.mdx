@@ -1,0 +1,107 @@
+---
+title: Entrega de emails
+description: Cada workspace de Prysm:ID arranca con SMTP gestionado vía Emboux. Cómo funciona, cómo monitorear deliverability, y cómo traer tu propio SMTP cuando estés listo.
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+Cada workspace nuevo necesita poder mandar emails: verificación al registrarse, password reset, magic links, invitaciones. Por default, Prysm:ID configura ese SMTP por vos durante el provisioning — sin que tengas que pedir DKIM ni rotar claves.
+
+## Lo que se configura automáticamente
+
+Cuando creás un workspace, durante los 60-90s del provisioning hacemos esto por vos:
+
+<Steps>
+
+1. Registramos el subdominio `{tu-slug}.auth.prysmid.com` con nuestro proveedor de email **Emboux**.
+
+2. Creamos un mailbox dedicado `noreply@{tu-slug}.auth.prysmid.com` con su propia credencial — esa credencial vive solo en tu instance, encriptada.
+
+3. Configuramos el SMTP provider de tu motor de auth apuntando a Emboux con esa credencial.
+
+4. Habilitamos los DNS records de autenticación (SPF, DKIM, tracking CNAME) sobre tu subdominio.
+
+</Steps>
+
+Resultado: cuando un end-user de tu app pide un magic link o un password reset, recibe un email firmado con DKIM, con SPF correcto, desde un dominio que coincide con tu workspace. Sin tu intervención.
+
+<Aside type="tip">
+**Por qué Emboux en lugar de configurar SMTP a mano**: en lugar de pedirte que abras una cuenta en un provider externo, configures DNS en cuatro lugares y hagas warmup de IP, lo hacemos por vos. Es la diferencia entre "tu primer email tarda 4 horas en estar listo" y "tu primer email sale a los 2 minutos del signup". Si después querés mover esto a infraestructura tuya, ver [BYO SMTP](#byo-smtp) abajo.
+</Aside>
+
+## Qué emails salen por este SMTP
+
+El motor de auth dispara emails en estos casos. Todos van por el SMTP gestionado por default:
+
+| Evento | Cuándo |
+|---|---|
+| Verificación de email | Usuario nuevo se registra y el flujo lo requiere |
+| Password reset | Usuario inicia el flujo "olvidé mi contraseña" |
+| Magic link login | Usuario pide login por email sin contraseña |
+| Invitación a tenant | Vos invitás a un end-user a tu instance |
+| MFA enrollment | Usuario configura MFA y recibe códigos de respaldo |
+| Cambio de email | Usuario cambia su email de cuenta |
+
+Emails de marketing, onboarding sequences o cualquier comunicación NO transaccional **no salen por acá** — eso es responsabilidad de tu app, con el provider que vos elijas.
+
+## Monitorear deliverability
+
+Tu dashboard tiene una pestaña **Email** dentro del workspace que te muestra:
+
+- Volumen enviado en los últimos 30 días
+- Tasa de bounce (hard + soft)
+- Tasa de spam reports
+- Últimos 100 envíos con destinatario, asunto, evento, y status (delivered / bounced / deferred)
+
+Si la tasa de bounce sube por encima de 5% sostenido, te alertamos al email del workspace owner. Eso suele significar listas mal mantenidas en el lado de tu app — direcciones inválidas que el motor de auth está intentando notificar.
+
+## BYO SMTP
+
+Cuando crezcas y quieras controlar el dominio remitente con tu propia infra (typical en Pro/Enterprise para que los emails salgan desde `noreply@tudominio.com` en lugar de `noreply@{slug}.auth.prysmid.com`), podés configurar tu propio SMTP:
+
+`Dashboard → Workspace → Email → Use my own SMTP`
+
+Vas a necesitar:
+
+- **Host** y **puerto** (típicamente 465 TLS o 587 STARTTLS)
+- **Usuario** y **password**
+- **From address** verificado en tu provider
+- **Reply-to** (opcional)
+
+<Aside type="caution">
+Antes de activar BYO SMTP, asegurate de tener SPF + DKIM + DMARC configurados en el dominio remitente. Si los emails que mandás se marcan como spam, los end-users de tu app no llegan a verificar su cuenta — y eso parece "el producto está roto".
+</Aside>
+
+Una vez que activás BYO, **el SMTP gestionado se desactiva inmediatamente**: el siguiente email sale por tu provider. Si tu config falla, el motor de auth registra los errores en el audit log y te avisa — podés volver al SMTP gestionado en cualquier momento.
+
+## Custom domain en el remitente
+
+Si usás SMTP gestionado y querés que los emails salgan desde tu propio dominio (ej. `noreply@tuapp.com` en lugar de `noreply@acme.auth.prysmid.com`), necesitás plan **Pro o Enterprise** y custom domain habilitado:
+
+`Dashboard → Workspace → Email → Custom sender domain`
+
+Te damos los DNS records exactos a pegar en tu zona (SPF, DKIM, MX si querés recibir replies en algún lado). Verificamos los records cada 30 segundos durante 24h hasta que los detectamos. Cuando todo verde, los emails salen desde tu dominio.
+
+## Recuperación de errores
+
+Si un email no se entrega:
+
+- **Hard bounce** (dirección inválida, dominio inexistente): el motor de auth lo registra y, después de 3 hard bounces para la misma dirección en 7 días, marca al usuario como `email_unreachable`. El audit log y los webhooks `user.email_unreachable` te avisan.
+- **Soft bounce** (mailbox lleno, server temporal): reintentamos hasta 4 veces durante 24h con backoff exponencial.
+- **Spam report**: registrado en el audit log + alerta inmediata al workspace owner.
+
+Si el SMTP gestionado tiene una falla generalizada, te avisamos via el [status page](https://prysmid.com/status) y el SLA correspondiente al plan aplica.
+
+## Preguntas frecuentes
+
+**¿Puedo desactivar emails completamente?**
+No, el motor de auth los necesita para flujos críticos como password reset. Lo que sí podés hacer es desactivar password-based login y forzar IdP-only — en ese caso, los únicos emails serán invitaciones y MFA.
+
+**¿Cuántos emails están incluidos en mi plan?**
+Free: 1 000/mes por workspace. Pro: 100 000/mes incluidos, $0.0001 por email adicional. Enterprise: negociable. Volumen muy alto debería migrar a BYO SMTP — sale más barato y te da el control del dominio remitente.
+
+**¿Pueden ver el contenido de mis emails?**
+El payload del email transita por la infraestructura de Emboux (que opera el mismo equipo que Prysm:ID). No los inspeccionamos rutinariamente. Los headers (from, to, subject, status) sí los registramos para deliverability tracking — esa data vive en tu dashboard y se borra a los 90 días.
+
+**¿Cumple con LGPD / GDPR para data de end-users?**
+Sí, en cuanto a tránsito y procesamiento. Para clientes Enterprise incluimos addenda DPA específicos. Plan Free y Pro siguen los términos públicos en `prysmid.com/privacy`.
