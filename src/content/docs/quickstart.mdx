@@ -134,7 +134,7 @@ Tres direcciones según qué te interesa profundizar:
     description="Verificar firma, audience, expiración. JWKS rotation."
   />
   <LinkCard
-    title="Conectar Google / GitHub / Microsoft"
+    title="Conectar Google / GitHub / Apple"
     href="/dashboard/idps/"
     description="Para que tus usuarios usen sus IdPs corporativos."
   />
@@ -144,6 +144,29 @@ Tres direcciones según qué te interesa profundizar:
     description="MCP server: que Claude registre apps por vos."
   />
 </CardGrid>
+
+## Sample apps copy-pasteables
+
+Si preferís arrancar de un repo que ya integra Prysm:ID en lugar de
+seguir esta guía paso a paso, cloná uno de estos starters. Cada uno
+es ~100 líneas de código y arranca un hello-world signin en 5 minutos:
+
+<CardGrid>
+  <LinkCard
+    title="Next.js 15 + Auth.js v5"
+    href="https://github.com/PrysmID/prysmid-nextjs-starter"
+    description="App Router, OIDC provider via Auth.js, server-side session. Ideal para SaaS B2B con dashboard React."
+  />
+  <LinkCard
+    title="FastAPI + Authlib"
+    href="https://github.com/PrysmID/prysmid-fastapi-starter"
+    description="Tres endpoints, sesión cookie firmada, sin DB. Ideal para APIs Python o backends LLM-friendly."
+  />
+</CardGrid>
+
+Ambos repos son MIT, los podés forkear y empezar a borrar lo que no
+necesites. Los dos cubren el flujo OIDC completo: login → callback →
+session → logout, sin dependencias de DB ni infra extra.
 
 ## Troubleshooting
 

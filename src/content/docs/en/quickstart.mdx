@@ -145,6 +145,29 @@ Three directions depending on what you want to deepen:
   />
 </CardGrid>
 
+## Copy-pasteable sample apps
+
+If you prefer cloning a repo that already integrates Prysm:ID over
+following this guide step by step, grab one of these starters. Each
+is ~100 LoC and gets you a hello-world signin in 5 minutes:
+
+<CardGrid>
+  <LinkCard
+    title="Next.js 15 + Auth.js v5"
+    href="https://github.com/PrysmID/prysmid-nextjs-starter"
+    description="App Router, OIDC provider via Auth.js, server-side session. Ideal for B2B SaaS with React dashboards."
+  />
+  <LinkCard
+    title="FastAPI + Authlib"
+    href="https://github.com/PrysmID/prysmid-fastapi-starter"
+    description="Three endpoints, signed cookie session, no DB. Ideal for Python APIs or LLM-friendly backends."
+  />
+</CardGrid>
+
+Both repos are MIT — fork them and start deleting what you don't need.
+Both cover the full OIDC flow: login → callback → session → logout,
+with no DB or extra infra.
+
 ## Troubleshooting
 
 **The workspace stays in `provisioning` for more than 5 minutes.**
