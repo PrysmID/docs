@@ -26,7 +26,7 @@ Setting up Prysm:ID from Claude Code is literally copy + paste. The dashboard ge
    - Check Node ≥ 20 and the `claude` CLI
    - Back up your `~/.claude.json`
    - Register the MCP server with `claude mcp add --scope user prysmid -- npx -y @prysmid/mcp`
-   - Ask you to open a terminal and run `npx -y @prysmid/mcp` once to complete the **device flow** (URL + 8-character code in `XXXX-XXXX` format that you confirm in the browser)
+   - Complete the **device flow** (URL + 8-character code in `XXXX-XXXX` format that you confirm in the browser). If your agent can launch background shell processes, it does this on its own and shows you the URL + code directly in the chat. Otherwise, it'll ask you to open a terminal and run `npx -y @prysmid/mcp` once.
    - Ask you to restart Claude Code so it picks up the MCP
    - Verify the tools appear and authentication is OK
 

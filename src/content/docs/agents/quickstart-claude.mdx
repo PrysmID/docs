@@ -26,7 +26,7 @@ Configurar Prysm:ID desde Claude Code es literalmente "copy + paste". El dashboa
    - Verificar Node ≥ 20 y el CLI `claude`
    - Hacer backup de tu `~/.claude.json`
    - Registrar el MCP server con `claude mcp add --scope user prysmid -- npx -y @prysmid/mcp`
-   - Pedirte que abras una terminal y corras `npx -y @prysmid/mcp` una vez para completar el **device flow** (URL + código de 8 caracteres `XXXX-XXXX` que confirmás en el browser)
+   - Completar el **device flow** (URL + código de 8 caracteres `XXXX-XXXX` que confirmás en el browser). Si tu agente puede correr procesos shell en background, lo hace solo y te muestra URL + código directo en el chat. Si no, te pide abrir una terminal y correr `npx -y @prysmid/mcp` una vez.
    - Pedirte que reinicies Claude Code para que cargue el MCP
    - Validar que las tools aparezcan y autenticación esté OK
 
