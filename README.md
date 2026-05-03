@@ -7,7 +7,7 @@ Bilingual: Spanish (default, brand §6.5) + English mirror at `/en/*`.
 ## Why this stack
 
 - Same shape as `web/` (Astro on CF Pages) — proven deploy path.
-- Same family as EmBoux's `docs_site/` — already in production with this combo.
+- Same family as EmBoux's `docs` — already in production with this combo.
 - Brand §8.4 (light default + sidebar fija + TOC + max-width 720px + i18n + callouts) maps almost 1:1 to Starlight defaults; minimal overrides.
 - Open source, owned, no vendor lock.
 
@@ -16,7 +16,7 @@ The brand manual is the contract; everything in `src/styles/custom.css` is a bri
 ## Develop
 
 ```bash
-cd docs_site
+cd docs
 npm install
 npm run dev      # http://localhost:4321
 npm run build    # outputs to dist/
