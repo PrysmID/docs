@@ -8,7 +8,7 @@ import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
 When your app receives an `id_token` from the OIDC callback (or an `access_token` in an `Authorization: Bearer` header), your backend has to validate it before trusting it. Validating means four things:
 
 1. **Signature** correct against the issuer's public key (JWKS).
-2. **`iss`** = `https://auth.<your_slug>.prysmid.com` exactly.
+2. **`iss`** = `https://<your_slug>.auth.prysmid.com` exactly.
 3. **`aud`** = your `client_id`.
 4. **`exp`** > now.
 
@@ -25,7 +25,7 @@ Miss any of the four and you reject. There is no "validate ish".
 ```js
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 
-const ISSUER = 'https://auth.acme.prysmid.com';
+const ISSUER = 'https://acme.auth.prysmid.com';
 const AUDIENCE = process.env.PRYSMID_CLIENT_ID;
 
 // JWKS auto-caches with sensible TTL and refreshes on key rotation.
@@ -46,7 +46,7 @@ export async function verifyIdToken(token) {
 import jwt
 from jwt import PyJWKClient
 
-ISSUER = "https://auth.acme.prysmid.com"
+ISSUER = "https://acme.auth.prysmid.com"
 AUDIENCE = os.environ["PRYSMID_CLIENT_ID"]
 
 jwks_client = PyJWKClient(f"{ISSUER}/oauth/v2/keys")
@@ -70,7 +70,7 @@ import (
     "github.com/coreos/go-oidc/v3/oidc"
 )
 
-const issuer = "https://auth.acme.prysmid.com"
+const issuer = "https://acme.auth.prysmid.com"
 
 func newVerifier(ctx context.Context) (*oidc.IDTokenVerifier, error) {
     provider, err := oidc.NewProvider(ctx, issuer)
@@ -94,7 +94,7 @@ require 'jwt'
 require 'open-uri'
 require 'json'
 
-ISSUER = 'https://auth.acme.prysmid.com'
+ISSUER = 'https://acme.auth.prysmid.com'
 AUDIENCE = ENV['PRYSMID_CLIENT_ID']
 
 def jwks
@@ -131,4 +131,4 @@ end
 | `Invalid signature` | You cached a stale JWKS, or your library doesn't support RS256 (check flags). |
 | `Invalid audience` | Your `client_id` changed, or the token came from another app in your workspace. |
 | `Token expired` | The `id_token` lasts ~1h. Refresh with `refresh_token`. |
-| `Issuer mismatch` | You changed the workspace slug. The `iss` reflects it: `auth.<slug>.prysmid.com`. |
+| `Issuer mismatch` | You changed the workspace slug. The `iss` reflects it: `<slug>.auth.prysmid.com`. |

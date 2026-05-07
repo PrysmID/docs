@@ -13,11 +13,11 @@ Click "Create" and provisioning begins. For the next 60-90 seconds we do:
 | Step | Takes | What it does |
 |---|---|---|
 | Reserve slug | `<1s` | Verify `acme` isn't in use. |
-| Create DNS | 5-10s | `auth.acme.prysmid.com` points to your instance. |
+| Create DNS | 5-10s | `acme.auth.prysmid.com` points to your instance. |
 | Provision instance | 30-60s | Spin up dedicated instance, database, key store. |
 | Configure email | 5-10s | Connect the instance to the transactional email service. |
 | Default branding | `<1s` | "Powered by Prysm:ID" logo + default palette. |
-| TLS cert | 10-30s | Issue certificate for `auth.acme.prysmid.com`. |
+| TLS cert | 10-30s | Issue certificate for `acme.auth.prysmid.com`. |
 | Healthcheck | `<5s` | Validate the OIDC endpoint responds. |
 | Flip to `active` | `<1s` | Done. |
 

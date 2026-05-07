@@ -21,7 +21,7 @@ You'll need: a Google or GitHub account for signup, any domain for your test OAu
 
 2. **Create your first workspace.**
 
-   After your first login we ask for a slug (e.g. `acme`). That slug becomes `auth.acme.prysmid.com` — the domain where your users will sign in. Provisioning takes 60-90 seconds: we spin up a dedicated instance for your workspace, configure OIDC, default branding and SMTP.
+   After your first login we ask for a slug (e.g. `acme`). That slug becomes `acme.auth.prysmid.com` — the domain where your users will sign in. Provisioning takes 60-90 seconds: we spin up a dedicated instance for your workspace, configure OIDC, default branding and SMTP.
 
    <Aside type="tip">
    The slug is immutable. Pick something that represents your product, not your team. `acme` over `acme-team-prod`.
@@ -42,11 +42,11 @@ You'll need: a Google or GitHub account for signup, any domain for your test OAu
    Your app talks to Prysm:ID over standard OIDC. Endpoints:
 
    ```
-   Issuer:        https://auth.acme.prysmid.com
-   Authorization: https://auth.acme.prysmid.com/oauth/v2/authorize
-   Token:         https://auth.acme.prysmid.com/oauth/v2/token
-   UserInfo:      https://auth.acme.prysmid.com/oidc/v1/userinfo
-   JWKS:          https://auth.acme.prysmid.com/oauth/v2/keys
+   Issuer:        https://acme.auth.prysmid.com
+   Authorization: https://acme.auth.prysmid.com/oauth/v2/authorize
+   Token:         https://acme.auth.prysmid.com/oauth/v2/token
+   UserInfo:      https://acme.auth.prysmid.com/oidc/v1/userinfo
+   JWKS:          https://acme.auth.prysmid.com/oauth/v2/keys
    ```
 
    Any decent OIDC library works. Examples:
@@ -56,7 +56,7 @@ You'll need: a Google or GitHub account for signup, any domain for your test OAu
    ```js
    import { Issuer } from 'openid-client';
 
-   const issuer = await Issuer.discover('https://auth.acme.prysmid.com');
+   const issuer = await Issuer.discover('https://acme.auth.prysmid.com');
    const client = new issuer.Client({
      client_id: process.env.PRYSMID_CLIENT_ID,
      client_secret: process.env.PRYSMID_CLIENT_SECRET,
@@ -72,7 +72,7 @@ You'll need: a Google or GitHub account for signup, any domain for your test OAu
    oauth = OAuth()
    oauth.register(
        name='prysmid',
-       server_metadata_url='https://auth.acme.prysmid.com/.well-known/openid-configuration',
+       server_metadata_url='https://acme.auth.prysmid.com/.well-known/openid-configuration',
        client_id=os.environ['PRYSMID_CLIENT_ID'],
        client_secret=os.environ['PRYSMID_CLIENT_SECRET'],
        client_kwargs={'scope': 'openid profile email'},
@@ -84,7 +84,7 @@ You'll need: a Google or GitHub account for signup, any domain for your test OAu
    import "github.com/coreos/go-oidc/v3/oidc"
    import "golang.org/x/oauth2"
 
-   provider, _ := oidc.NewProvider(ctx, "https://auth.acme.prysmid.com")
+   provider, _ := oidc.NewProvider(ctx, "https://acme.auth.prysmid.com")
    conf := &oauth2.Config{
        ClientID:     os.Getenv("PRYSMID_CLIENT_ID"),
        ClientSecret: os.Getenv("PRYSMID_CLIENT_SECRET"),
@@ -97,11 +97,11 @@ You'll need: a Google or GitHub account for signup, any domain for your test OAu
    <TabItem label="cURL">
    ```bash
    # 1. Redirect your user to:
-   AUTH_URL="https://auth.acme.prysmid.com/oauth/v2/authorize"
+   AUTH_URL="https://acme.auth.prysmid.com/oauth/v2/authorize"
    echo "$AUTH_URL?client_id=$PRYSMID_CLIENT_ID&redirect_uri=http://localhost:3000/auth/callback&response_type=code&scope=openid%20profile%20email"
 
    # 2. On callback, exchange `code` for tokens:
-   curl -X POST https://auth.acme.prysmid.com/oauth/v2/token \
+   curl -X POST https://acme.auth.prysmid.com/oauth/v2/token \
      -u "$PRYSMID_CLIENT_ID:$PRYSMID_CLIENT_SECRET" \
      -d "grant_type=authorization_code" \
      -d "code=$AUTH_CODE" \
@@ -112,7 +112,7 @@ You'll need: a Google or GitHub account for signup, any domain for your test OAu
 
 5. **Try the login.**
 
-   Run your local app and hit your login flow. Your app redirects to `auth.acme.prysmid.com`, the user enters email + password (or signs up), and comes back to your callback with an `authorization_code`. Exchange it for a JWT `id_token` carrying `sub`, `email`, `name`.
+   Run your local app and hit your login flow. Your app redirects to `acme.auth.prysmid.com`, the user enters email + password (or signs up), and comes back to your callback with an `authorization_code`. Exchange it for a JWT `id_token` carrying `sub`, `email`, `name`.
 
    That `sub` is the stable user identifier in your workspace. Store it alongside your user record.
 

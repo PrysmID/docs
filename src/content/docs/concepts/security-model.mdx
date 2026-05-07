@@ -28,7 +28,7 @@ El plano de control puede orquestar workspaces (crear, suspender, leer config) p
 
 ## Keys y firma de tokens
 
-Cada instancia tiene su propio key store. Los `id_token` y `access_token` se firman con **RS256** por default. Las keys públicas se exponen vía JWKS en `https://auth.<slug>.prysmid.com/oauth/v2/keys`.
+Cada instancia tiene su propio key store. Los `id_token` y `access_token` se firman con **RS256** por default. Las keys públicas se exponen vía JWKS en `https://<slug>.auth.prysmid.com/oauth/v2/keys`.
 
 **Rotation**: las keys de firma rotan automáticamente. La key vieja queda activa para validación durante un período de gracia. Tu cliente debe seguir el JWKS dinámicamente, no cachear una key fija (la mayoría de las librerías OIDC lo hacen bien por default).
 
@@ -50,7 +50,7 @@ Si querés irte de Prysm:ID hoy, lo hacés:
 
 3. **Importar el dump**. Usuarios, IdPs, apps, branding, todo se restaura.
 
-4. **Apuntar tu DNS**. `auth.acme.prysmid.com` lo apuntás vos (CNAME al server tuyo) o cambiás el issuer en tu app. Tus tokens emitidos antes siguen válidos hasta expirar.
+4. **Apuntar tu DNS**. `acme.auth.prysmid.com` lo apuntás vos (CNAME al server tuyo) o cambiás el issuer en tu app. Tus tokens emitidos antes siguen válidos hasta expirar.
 
 5. **Cancelás Prysm:ID**. Borrás el workspace desde el dashboard. La instancia se elimina; los backups se purgan a 90 días.
 

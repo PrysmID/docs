@@ -16,7 +16,7 @@ Vas a necesitar `client_id` y `client_secret` del provider. Cómo obtenerlos var
 
 1. [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials.
 2. **Create Credentials → OAuth client ID → Web application**.
-3. **Authorized redirect URIs**: pegá el callback que el dashboard te muestra al elegir Google. Forma: `https://auth.<tu-slug>.prysmid.com/idps/callback`.
+3. **Authorized redirect URIs**: pegá el callback que el dashboard te muestra al elegir Google. Forma: `https://<tu-slug>.auth.prysmid.com/idps/callback`.
 4. Save → copiá `client_id` y `client_secret`.
 5. En el dashboard de Prysm:ID, pegá ambos. Test → activate.
 
@@ -27,7 +27,7 @@ Vas a necesitar `client_id` y `client_secret` del provider. Cómo obtenerlos var
 
 1. [GitHub → Settings → Developer settings → OAuth Apps → New OAuth App](https://github.com/settings/developers).
 2. **Application name**: tu producto. **Homepage URL**: tu landing.
-3. **Authorization callback URL**: `https://auth.<tu-slug>.prysmid.com/idps/callback`.
+3. **Authorization callback URL**: `https://<tu-slug>.auth.prysmid.com/idps/callback`.
 4. Generate client_secret → copiá.
 5. Dashboard de Prysm:ID → pegá → activate.
 
@@ -37,7 +37,7 @@ GitHub no devuelve `email` por default si el user lo tiene privado. Pedí scope 
 <TabItem label="Apple">
 
 1. [Apple Developer Console → Certificates, Identifiers & Profiles → Identifiers → Services IDs → New](https://developer.apple.com/account/resources/identifiers/list/serviceId).
-2. Configurá un **Sign in with Apple** Services ID. **Return URL** (Web): `https://auth.<tu-slug>.prysmid.com/idps/callback`.
+2. Configurá un **Sign in with Apple** Services ID. **Return URL** (Web): `https://<tu-slug>.auth.prysmid.com/idps/callback`.
 3. Generá una **Sign in with Apple key** (Keys → New). Descargá el `.p8` (única vez).
 4. Anotá: **Team ID** (Membership → Team ID), **Key ID**, **Services ID** (= client_id).
 5. Dashboard Prysm:ID → Add Apple → pegá Team ID + Key ID + Services ID + contenido del `.p8`. Test → activate.
@@ -50,8 +50,8 @@ Apple Sign In requiere HTTPS público para el callback (no funciona contra `loca
 Para IdPs SAML (Okta, OneLogin, etc):
 
 1. En tu IdP, creá una "SAML application".
-2. **ACS URL** (Assertion Consumer Service): `https://auth.<tu-slug>.prysmid.com/saml/acs`.
-3. **Entity ID**: `https://auth.<tu-slug>.prysmid.com/saml/metadata`.
+2. **ACS URL** (Assertion Consumer Service): `https://<tu-slug>.auth.prysmid.com/saml/acs`.
+3. **Entity ID**: `https://<tu-slug>.auth.prysmid.com/saml/metadata`.
 4. **NameID format**: `EmailAddress` (recomendado).
 5. **Attributes**: como mínimo `email`. Opcionales: `firstName`, `lastName`, `groups`.
 6. Tu IdP te da una **metadata URL** o un XML download.

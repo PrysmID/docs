@@ -13,7 +13,7 @@ Si lo que vos vendés es una app B2B donde **cada cliente tuyo necesita su propi
 
 ```
 Tu workspace en Prysm:ID
-└── auth.<tu_slug>.prysmid.com    (una sola instancia)
+└── <tu_slug>.auth.prysmid.com    (una sola instancia)
     ├── tenant: Acme Corp (cliente tuyo)
     │   ├── users: alice@acme, bob@acme
     │   ├── IdP propio: Acme SSO (Okta, Azure AD, Google Workspace)
@@ -118,7 +118,7 @@ En tu app, si querés ofrecer "switch tenant" sin re-login, manejás dos sesione
 Patrón típico:
 
 1. Tu landing tiene un signup form. Usuario completa email + nombre de empresa.
-2. Tu BE: crea customer en *tu* DB, crea tenant en Prysm:ID via API, devuelve link a `auth.tu_slug.prysmid.com/...?tenant_hint=...`.
+2. Tu BE: crea customer en *tu* DB, crea tenant en Prysm:ID via API, devuelve link a `tu_slug.auth.prysmid.com/...?tenant_hint=...`.
 3. Usuario completa signup en login UI de Prysm:ID (con branding default tuyo, o branding del tenant si ya está configurado).
 4. Webhook `user.created` te llega; persistís el `sub` en `app_user`.
 

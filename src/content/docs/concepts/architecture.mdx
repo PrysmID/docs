@@ -9,7 +9,7 @@ Antes de integrar Prysm:ID conviene entender una decisión de fondo que hace tod
 
 ## El modelo en una frase
 
-> Un workspace de Prysm:ID = una instancia dedicada, con su propio dominio (`auth.<slug>.prysmid.com`), su propia base de usuarios, su propio key store, su propio audit log.
+> Un workspace de Prysm:ID = una instancia dedicada, con su propio dominio (`<slug>.auth.prysmid.com`), su propia base de usuarios, su propio key store, su propio audit log.
 
 Cuando vos te registrás como cliente de Prysm:ID, te aprovisionamos una stack independiente. Cuando *tu* cliente te audite y pregunte "¿comparten base de datos con otros tenants?", la respuesta es **no**.
 
@@ -38,7 +38,7 @@ Si querés irte, el export de tu instancia es completo y autocontenido. Levantá
 │                                                                      │
 │  ┌──────────────────────────────┐  ┌──────────────────────────────┐  │
 │  │ workspace acme               │  │ workspace globex             │  │
-│  │ ─ auth.acme.prysmid.com      │  │ ─ auth.globex.prysmid.com    │  │
+│  │ ─ acme.auth.prysmid.com      │  │ ─ globex.auth.prysmid.com    │  │
 │  │ ─ instancia dedicada  │  │ ─ instancia dedicada  │  │
 │  │ ─ DB schema propio           │  │ ─ DB schema propio           │  │
 │  │ ─ JWKS propio                │  │ ─ JWKS propio                │  │
@@ -52,7 +52,7 @@ Si querés irte, el export de tu instancia es completo y autocontenido. Levantá
 
 **Plano de control** (`app.prysmid.com`, `api.prysmid.com`, `npx @prysmid/mcp`): donde vos administrás tus workspaces. Acá está el dashboard, los webhooks, el billing, la API y el MCP.
 
-**Plano de datos** (`auth.<slug>.prysmid.com`): la instancia dedicada de tu workspace. Tus *usuarios finales* hablan acá para hacer login. Tu *app* habla acá para validar JWTs vía JWKS.
+**Plano de datos** (`<slug>.auth.prysmid.com`): la instancia dedicada de tu workspace. Tus *usuarios finales* hablan acá para hacer login. Tu *app* habla acá para validar JWTs vía JWKS.
 
 Los dos planos están separados por diseño. Un outage en `app.prysmid.com` no detiene los logins de tus usuarios — su instancia sigue ahí.
 

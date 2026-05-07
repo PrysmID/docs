@@ -8,7 +8,7 @@ description: Limits del control plane y del data plane. Cómo medirlos, cómo ma
 | Plano | Endpoint | Límite | Por qué |
 |---|---|---|---|
 | **Control** | `api.prysmid.com/v1/*` | 60 req/min por workspace, 600 req/min por org | Operaciones de admin: bajo volumen, alto costo. El cap protege la plataforma de abuso. |
-| **Data** | `auth.<slug>.prysmid.com/*` | 50 req/seg por instance (burst 200) | Login flow: alto volumen. Configurable Pro+ si crecés. |
+| **Data** | `<slug>.auth.prysmid.com/*` | 50 req/seg por instance (burst 200) | Login flow: alto volumen. Configurable Pro+ si crecés. |
 | **Webhooks** (egreso) | nuestro POST a tu endpoint | 100 deliveries/min por endpoint | Te protege a vos: si tu endpoint se rompe, no te bombardeamos. |
 
 ## Headers en la response
@@ -51,8 +51,8 @@ Si necesitás crear 50 tenants de un golpe, el camino correcto es la **batch API
 ## Lo que NO está rate-limited
 
 - **Healthchecks** (`api.prysmid.com/healthz`).
-- **OIDC discovery** (`auth.<slug>.prysmid.com/.well-known/openid-configuration`).
-- **JWKS** (`auth.<slug>.prysmid.com/oauth/v2/keys`) — Cloudflare lo cachea agresivamente.
+- **OIDC discovery** (`<slug>.auth.prysmid.com/.well-known/openid-configuration`).
+- **JWKS** (`<slug>.auth.prysmid.com/oauth/v2/keys`) — Cloudflare lo cachea agresivamente.
 - **Static assets** del dashboard (cacheados en CF Pages).
 
 ## Webhook deliveries — política específica

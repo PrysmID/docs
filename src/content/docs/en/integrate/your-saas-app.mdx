@@ -13,7 +13,7 @@ If what you sell is a B2B app where **each of your customers needs its own login
 
 ```
 Your Prysm:ID workspace
-└── auth.<your_slug>.prysmid.com    (one instance)
+└── <your_slug>.auth.prysmid.com    (one instance)
     ├── tenant: Acme Corp (your customer)
     │   ├── users: alice@acme, bob@acme
     │   ├── their own IdP: Acme SSO (Okta, Azure AD, Google Workspace)
@@ -118,7 +118,7 @@ In your app, if you want to offer "switch tenant" without re-login, you handle t
 Typical pattern:
 
 1. Your landing has a signup form. User fills email + company name.
-2. Your BE: creates customer in *your* DB, creates tenant in Prysm:ID via API, returns link to `auth.your_slug.prysmid.com/...?tenant_hint=...`.
+2. Your BE: creates customer in *your* DB, creates tenant in Prysm:ID via API, returns link to `your_slug.auth.prysmid.com/...?tenant_hint=...`.
 3. User completes signup in Prysm:ID's login UI (default branding, or the tenant's once it's configured).
 4. Webhook `user.created` arrives; you persist the `sub` into `app_user`.
 

@@ -9,7 +9,7 @@ Before integrating Prysm:ID it pays to understand a foundational decision that m
 
 ## The model in one sentence
 
-> A Prysm:ID workspace = one dedicated instance, with its own domain (`auth.<slug>.prysmid.com`), its own user database, its own key store, its own audit log.
+> A Prysm:ID workspace = one dedicated instance, with its own domain (`<slug>.auth.prysmid.com`), its own user database, its own key store, its own audit log.
 
 When you sign up as a Prysm:ID customer, we provision an independent stack for you. When *your* customer audits you and asks "do you share a database with other tenants?", the answer is **no**.
 
@@ -38,7 +38,7 @@ If you want to leave, the export of your instance is complete and self-contained
 │                                                                      │
 │  ┌──────────────────────────────┐  ┌──────────────────────────────┐  │
 │  │ workspace acme               │  │ workspace globex             │  │
-│  │ ─ auth.acme.prysmid.com      │  │ ─ auth.globex.prysmid.com    │  │
+│  │ ─ acme.auth.prysmid.com      │  │ ─ globex.auth.prysmid.com    │  │
 │  │ ─ dedicated instance │  │ ─ dedicated instance │  │
 │  │ ─ own DB schema              │  │ ─ own DB schema              │  │
 │  │ ─ own JWKS                   │  │ ─ own JWKS                   │  │
@@ -52,7 +52,7 @@ If you want to leave, the export of your instance is complete and self-contained
 
 **Control plane** (`app.prysmid.com`, `api.prysmid.com`, `npx @prysmid/mcp`): where you administer your workspaces. Dashboard, webhooks, billing, API and MCP live here.
 
-**Data plane** (`auth.<slug>.prysmid.com`): your workspace's own dedicated instance. Your *end users* talk here to log in. Your *app* talks here to validate JWTs via JWKS.
+**Data plane** (`<slug>.auth.prysmid.com`): your workspace's own dedicated instance. Your *end users* talk here to log in. Your *app* talks here to validate JWTs via JWKS.
 
 The two planes are separated by design. An outage on `app.prysmid.com` does not stop your users from logging in — their instance is still there.
 

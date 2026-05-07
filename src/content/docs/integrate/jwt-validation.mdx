@@ -8,11 +8,15 @@ import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
 Cuando tu app recibe un `id_token` del callback OIDC (o un `access_token` en un `Authorization: Bearer`), tu backend tiene que validarlo antes de confiar en él. Validar significa cuatro cosas:
 
 1. **Firma** correcta contra la public key del issuer (JWKS).
-2. **`iss`** = `https://auth.<tu_slug>.prysmid.com` exacto.
+2. **`iss`** con sufijo exacto `.auth.prysmid.com` (formato `https://<tu_slug>.auth.prysmid.com`).
 3. **`aud`** = tu `client_id`.
 4. **`exp`** > ahora.
 
 Si te falta alguna de las cuatro, rechazás. No hay "validar más o menos".
+
+<Aside type="caution">
+**Allowlist del `iss` con sufijo exacto, no `contains`.** Un host como `acme.auth.prysmid.com.attacker.com` matchea con `contains('.auth.prysmid.com')`. Validá con `endsWith('.auth.prysmid.com')` después de parsear el host, no con regex laxo ni substring. Es la primera cosa que un atacante prueba cuando ve que validás `iss` por string.
+</Aside>
 
 <Aside type="caution">
 **Nunca** valides JWTs decodificando el payload sin verificar firma. Un atacante puede emitir cualquier JWT con cualquier `sub` que quiera; lo único que lo distingue de uno legítimo es la firma. Librerías que aceptan `algorithm: none` por error son CVE clásica.
@@ -25,7 +29,7 @@ Si te falta alguna de las cuatro, rechazás. No hay "validar más o menos".
 ```js
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 
-const ISSUER = 'https://auth.acme.prysmid.com';
+const ISSUER = 'https://acme.auth.prysmid.com';
 const AUDIENCE = process.env.PRYSMID_CLIENT_ID;
 
 // JWKS se cachea automáticamente con TTL razonable y refresca al rotar keys.
@@ -46,7 +50,7 @@ export async function verifyIdToken(token) {
 import jwt
 from jwt import PyJWKClient
 
-ISSUER = "https://auth.acme.prysmid.com"
+ISSUER = "https://acme.auth.prysmid.com"
 AUDIENCE = os.environ["PRYSMID_CLIENT_ID"]
 
 jwks_client = PyJWKClient(f"{ISSUER}/oauth/v2/keys")
@@ -70,7 +74,7 @@ import (
     "github.com/coreos/go-oidc/v3/oidc"
 )
 
-const issuer = "https://auth.acme.prysmid.com"
+const issuer = "https://acme.auth.prysmid.com"
 
 func newVerifier(ctx context.Context) (*oidc.IDTokenVerifier, error) {
     provider, err := oidc.NewProvider(ctx, issuer)
@@ -94,7 +98,7 @@ require 'jwt'
 require 'open-uri'
 require 'json'
 
-ISSUER = 'https://auth.acme.prysmid.com'
+ISSUER = 'https://acme.auth.prysmid.com'
 AUDIENCE = ENV['PRYSMID_CLIENT_ID']
 
 def jwks
@@ -122,7 +126,54 @@ end
 
 **`access_token` vs `id_token`.** El `id_token` es para tu *backend* (probás identidad del usuario). El `access_token` es para hablar con APIs. No los mezcles.
 
-**Multi-tenant: validá `resourceowner`.** Si servís a muchos tenants en una sola instancia, no alcanza con `iss/aud/exp/sig` — también verificá que `urn:zitadel:iam:user:resourceowner:id` (URN canónica del claim que viene en el JWT) corresponda al tenant que el usuario está intentando acceder. Si no, Bob de Acme podría usar su token de Acme para acceder a recursos de Globex en tu app.
+**Multi-tenant: derivá el tenant del token.** Si tu app sirve a varios tenants, no alcanza con `iss/aud/exp/sig` — también tenés que saber a qué tenant corresponde el token para no servir datos de Acme a un user de Globex. PrysmID emite el claim `tenant_id` explícito (ver sección abajo). Usalo como fuente primaria; si falta, derivá del `iss`. Lo crítico: que tu lógica de autorización **siempre** lea el tenant del token validado, nunca de un parámetro de URL o body que el cliente puede mentir.
+
+## Claims PrysmID en el token
+
+Además de los claims OIDC estándar (`sub`, `iss`, `aud`, `exp`, `iat`, `email`, `name`, etc.), PrysmID emite **claims propios** en el access token y en la respuesta de userinfo. Son tu fuente canónica para identificar tenant y tipo de identidad sin tener que hacer un round-trip al management API.
+
+| Claim | Tipo | Descripción |
+|---|---|---|
+| `tenant_id` | string | Slug del workspace. Igual al subdominio del `iss` (`<tenant_id>.auth.prysmid.com`). |
+| `workspace_id` | string (UUID) | ID interno del workspace en PrysmID. Útil para correlation cross-product. |
+| `identity_type` | enum | `human`, `machine`, `service_account`, `test`. Te permite distinguir flows interactivos de M2M de E2E sin lógica externa. |
+
+### Contrato de los claims
+
+- **`iss` es el identificador canónico de tenant.** Los claims `tenant_id` y `workspace_id` son *complementarios* — facilitan el código pero no reemplazan la validación de `iss`. Si la Action JS que los emite falla, los claims pueden no aparecer en un token; el `iss` siempre está.
+
+- **Precedencia obligatoria.** Si `tenant_id` está presente, debe coincidir con el slug derivado del `iss`. Si difieren, **rechazá el token** — es señal de manipulación o configuración rota:
+
+  ```python
+  from urllib.parse import urlparse
+
+  def derive_tenant(claims: dict) -> str:
+      host = urlparse(claims["iss"]).hostname or ""
+      if not host.endswith(".auth.prysmid.com"):
+          raise ValueError("issuer not under .auth.prysmid.com")
+      slug = host.removesuffix(".auth.prysmid.com")
+
+      claim_tenant = claims.get("tenant_id")
+      if claim_tenant and claim_tenant != slug:
+          raise ValueError("tenant_id claim conflicts with iss")
+      return claim_tenant or slug
+  ```
+
+- **`identity_type` para autorización fina.** Un caso típico: tu API permite a `human` y `service_account` pero no a `test`; o aplica rate-limits distintos por tipo. Lecturarlo del claim evita que tengas que mantener una tabla propia de "este sub es bot".
+
+<Aside type="tip">
+**Logueá `tenant_source` en cada validación.** Si sumás `tenant_source=claim` o `tenant_source=issuer` en tu log de auth, vas a saber con datos cuándo es seguro retirar el fallback al `iss` (cuando 100% de los tokens en producción traigan el claim).
+</Aside>
+
+## Tokens de service accounts (M2M)
+
+Las service accounts ([crear / listar / revocar](/integrate/your-saas-app/)) emiten tokens vía el **JWT-bearer profile (RFC 7523)** contra `/oauth/v2/token`. Esos tokens son JWTs RS256 firmados por la misma JWKS que los tokens humanos — **mismo verificador**, mismos claims OIDC, más:
+
+- `identity_type: "service_account"` (en lugar de `human`).
+- `sub` = ID del machine user (estable).
+- `aud` puede ser narrow (`client_id` específico) o el general de la instance, según cómo configures la SA.
+
+No necesitás un verificador distinto. La única diferencia operativa es que **no hay refresh token** en el flujo M2M: la SA firma una nueva assertion cada vez que necesita un access token.
 
 ## Errores comunes y qué significan
 
@@ -131,4 +182,4 @@ end
 | `Invalid signature` | Cacheaste una JWKS vieja, o tu librería no soporta RS256 (chequeá flags). |
 | `Invalid audience` | Tu `client_id` cambió, o el token vino de otra app de tu workspace. |
 | `Token expired` | El `id_token` dura ~1h. Refrescá con `refresh_token`. |
-| `Issuer mismatch` | Cambiaste el slug del workspace. El `iss` lo refleja: `auth.<slug>.prysmid.com`. |
+| `Issuer mismatch` | Cambiaste el slug del workspace. El `iss` lo refleja: `<slug>.auth.prysmid.com`. |

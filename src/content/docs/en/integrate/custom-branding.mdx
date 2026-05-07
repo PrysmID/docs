@@ -9,7 +9,7 @@ The login is the first screen *your customers' users* see. Making it look like y
 
 1. **Workspace branding** — affects every login of your product. By default after signup, your workspace already has "Powered by Prysm:ID" branding (Free) or "your logo" branding (Pro).
 2. **Tenant branding** — partial overrides applied only when the user arrives with `tenant_hint`. Each of your customers can have their own logo and colors.
-3. **Custom domain** — `auth.acme.com` instead of `auth.your-slug.prysmid.com`. Pro+.
+3. **Custom domain** — `auth.acme.com` instead of `your-slug.auth.prysmid.com`. Pro+.
 
 ## What you can customize
 
@@ -21,7 +21,7 @@ The login is the first screen *your customers' users* see. Making it look like y
 | Favicon | ✅ | — | — |
 | "Powered by Prysm:ID" footer | Removable on Pro+ | — | — |
 | Custom CSS | ✅ Pro+ | ✅ Pro+ | — |
-| Login URL | `auth.<slug>.prysmid.com` | same | `auth.<your-domain>` |
+| Login URL | `<slug>.auth.prysmid.com` | same | `auth.<your-domain>` |
 
 ## Configure workspace branding
 
@@ -54,7 +54,7 @@ These overrides apply **only** when the OIDC flow comes with `tenant_hint=$TENAN
 
 ## Custom domain (Pro+)
 
-By default your instance lives at `auth.<slug>.prysmid.com`. If you want the login to appear under *your* domain (`auth.yourapp.com` or, for enterprise, `auth.acme.com`), follow this:
+By default your instance lives at `<slug>.auth.prysmid.com`. If you want the login to appear under *your* domain (`auth.yourapp.com` or, for enterprise, `auth.acme.com`), follow this:
 
 1. **Dashboard → Settings → Custom domain**. Enter `auth.yourapp.com`.
 2. We give you a CNAME value to point from your DNS towards `<workspace>.prysmid.cloud`.

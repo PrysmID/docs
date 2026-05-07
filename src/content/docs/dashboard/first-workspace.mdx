@@ -13,11 +13,11 @@ Click "Crear" y arranca la provisión. Los siguientes 60-90 segundos hacemos:
 | Paso | Tarda | Qué hace |
 |---|---|---|
 | Reservar slug | `<1s` | Verificar que `acme` no esté en uso. |
-| Crear DNS | 5-10s | `auth.acme.prysmid.com` apunta a tu instancia. |
+| Crear DNS | 5-10s | `acme.auth.prysmid.com` apunta a tu instancia. |
 | Provisionar instancia | 30-60s | Levantar instancia dedicada, base de datos, key store. |
 | Configurar email | 5-10s | Conectar la instancia al servicio de email transaccional. |
 | Branding default | `<1s` | Logo "Powered by Prysm:ID" + paleta default. |
-| Cert TLS | 10-30s | Emitir certificado para `auth.acme.prysmid.com`. |
+| Cert TLS | 10-30s | Emitir certificado para `acme.auth.prysmid.com`. |
 | Healthcheck | `<5s` | Validar que el endpoint OIDC responde. |
 | Marcar `active` | `<1s` | Listo. |
 
