@@ -30,12 +30,12 @@ Es **idéntica en todas las instancias**: solo cambia el subdominio. Si usás un
 ## Qué puede hacer el usuario ahí
 
 - **Ver** sus passkeys y segundos factores.
-- **Agregar** una passkey — un clic lanza la ceremonia WebAuthn nativa de Zitadel (Touch ID, Windows Hello, llave física, etc.).
+- **Agregar** una passkey — un clic corre la ceremonia WebAuthn **en la propia página** (Touch ID, Windows Hello, llave física, etc.) y le pide un **nombre** para reconocerla después. Sin saltos a otra pantalla.
 - **Quitar** una passkey.
 - **Quitar** la app de autenticación (TOTP).
 
 <Aside type="note">
-Hoy la página soporta **agregar y quitar**, no renombrar. El renombre de passkeys está en el backlog como fast-follow.
+Cada passkey se **nombra al crearse**. El renombre posterior no está disponible (los tokens passwordless de Zitadel son inmutables); para "renombrar", quitala y volvé a agregarla. Si el navegador no soporta WebAuthn, la página cae automáticamente a la ceremonia hospedada de Zitadel.
 </Aside>
 
 ## Conectarlo desde tu producto
@@ -56,8 +56,18 @@ Hoy la página soporta **agregar y quitar**, no renombrar. El renombre de passke
 
 </Steps>
 
-<Aside type="caution" title="Retorno al producto">
-Hoy **no** existe un parámetro `return_to`: cuando el usuario termina de enrolar, queda en la página de seguridad de Prysm:ID y vuelve a tu producto navegando hacia atrás. El retorno automático al producto tras enrolar es un fast-follow planificado. Si lo necesitás antes, avisá y se prioriza.
+## Volver a tu producto (`return_to`)
+
+Pasá `return_to` con la URL a la que querés que vuelva el usuario; la página muestra un botón **"Back to your app"** que lo lleva ahí:
+
+```html
+<a href="https://secrevo.auth.prysmid.com/account?return_to=https://app.secrevo.com/settings">
+  Agregar o gestionar passkeys
+</a>
+```
+
+<Aside type="note">
+El `return_to` se acepta **solo si su origen está registrado como redirect URI OIDC de tu workspace** (lo está, porque tu producto ya es cliente OIDC de Prysm:ID) o es el propio dominio de auth. Cualquier otro origen se descarta en silencio — sin open-redirect. Asegurate de que el origen del `return_to` figure entre los redirect URIs de tu app.
 </Aside>
 
 ## Passkeys y MFA obligatorio

@@ -30,12 +30,12 @@ It is **identical across every instance**: only the subdomain changes. If you us
 ## What the user can do there
 
 - **View** their passkeys and second factors.
-- **Add** a passkey — one click launches Zitadel's native WebAuthn ceremony (Touch ID, Windows Hello, security key, etc.).
+- **Add** a passkey — one click runs the WebAuthn ceremony **right on the page** (Touch ID, Windows Hello, security key, etc.) and asks for a **name** so they can recognize it later. No jump to another screen.
 - **Remove** a passkey.
 - **Remove** the authenticator app (TOTP).
 
 <Aside type="note">
-Today the page supports **add and remove**, not rename. Passkey rename is on the backlog as a fast-follow.
+Each passkey is **named at creation**. Renaming afterward isn't available (Zitadel's passwordless tokens are immutable); to "rename", remove and re-add. If the browser lacks WebAuthn, the page automatically falls back to Zitadel's hosted ceremony.
 </Aside>
 
 ## Wiring it from your product
@@ -56,8 +56,18 @@ Today the page supports **add and remove**, not rename. Passkey rename is on the
 
 </Steps>
 
-<Aside type="caution" title="Returning to your product">
-There is **no** `return_to` parameter yet: when the user finishes enrolling, they stay on the Prysm:ID security page and return to your product by navigating back. Automatic return-to-product after enrollment is a planned fast-follow. If you need it sooner, say so and it gets prioritized.
+## Returning to your product (`return_to`)
+
+Pass `return_to` with the URL the user should come back to; the page shows a **"Back to your app"** button that takes them there:
+
+```html
+<a href="https://secrevo.auth.prysmid.com/account?return_to=https://app.secrevo.com/settings">
+  Add or manage passkeys
+</a>
+```
+
+<Aside type="note">
+`return_to` is accepted **only if its origin is registered as an OIDC redirect URI of your workspace** (it is, because your product is already an OIDC client of Prysm:ID) or is the auth domain itself. Any other origin is silently dropped — no open redirect. Make sure the `return_to` origin is among your app's redirect URIs.
 </Aside>
 
 ## Passkeys and enforced MFA
