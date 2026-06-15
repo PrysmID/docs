@@ -1,0 +1,94 @@
+---
+title: Self-service passkeys for your users
+description: How to wire up the Prysm:ID-hosted security page so any end-user can add and manage their own passkeys, with zero WebAuthn UI in your product.
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+Your end-users can manage their own passkeys **on their own** — no admin enabling them one by one, and **without your product writing a single line of WebAuthn**. Prysm:ID hosts the page; you just link to it.
+
+> Send the user to `https://<your_slug>.auth.prysmid.com/account`. Done.
+
+## Why a link and nothing else
+
+Your product's login is already delegated to Prysm:ID over OIDC. A passkey is a credential that lives in **your Prysm:ID instance**, bound to that instance's domain (the WebAuthn *RP ID*). That's why the only surface where the browser allows the ceremony is under your own `auth_domain` — and that's why we host the page, not you.
+
+The page runs the OIDC Authorization Code + PKCE flow against the user's instance, and **every** operation goes through Zitadel's Auth API with the user's own token. There are no admin credentials anywhere in this path: a user can only ever touch their own authenticators.
+
+## The URL
+
+| Instance | Security page |
+|---|---|
+| Any workspace | `https://<your_slug>.auth.prysmid.com/account` |
+| Secrevo | `https://secrevo.auth.prysmid.com/account` |
+| Blenau | `https://blenau.auth.prysmid.com/account` |
+
+It is **identical across every instance**: only the subdomain changes. If you use a custom domain (`auth.yourdomain.com`), the page lives right there (`https://auth.yourdomain.com/account`).
+
+`/account` redirects to `/account/security`. If the user already has a live session on that domain, SSO is silent; otherwise they authenticate once and land on the page.
+
+## What the user can do there
+
+- **View** their passkeys and second factors.
+- **Add** a passkey — one click runs the WebAuthn ceremony **right on the page** (Touch ID, Windows Hello, security key, etc.) and asks for a **name** so they can recognize it later. No jump to another screen.
+- **Remove** a passkey.
+- **Remove** the authenticator app (TOTP).
+
+<Aside type="note">
+Each passkey is **named at creation**. Renaming afterward isn't available (Zitadel's passwordless tokens are immutable); to "rename", remove and re-add. If the browser lacks WebAuthn, the page automatically falls back to Zitadel's hosted ceremony.
+</Aside>
+
+## Wiring it from your product
+
+<Steps>
+
+1. **Add a button** to your dashboard / account page: *"Manage security"* or *"Add passkey"*.
+
+2. **Point it at** `https://<your_slug>.auth.prysmid.com/account`. Open it in the same tab (SSO needs the auth-domain cookies) or a new tab — both work.
+
+   ```html
+   <a href="https://secrevo.auth.prysmid.com/account">
+     Add or manage passkeys
+   </a>
+   ```
+
+3. **That's it.** No SDK to install, no endpoint to call, no `navigator.credentials` to implement.
+
+</Steps>
+
+## Returning to your product (`return_to`)
+
+Pass `return_to` with the URL the user should come back to; the page shows a **"Back to your app"** button that takes them there:
+
+```html
+<a href="https://secrevo.auth.prysmid.com/account?return_to=https://app.secrevo.com/settings">
+  Add or manage passkeys
+</a>
+```
+
+<Aside type="note">
+`return_to` is accepted **only if its origin is registered as an OIDC redirect URI of your workspace** (it is, because your product is already an OIDC client of Prysm:ID) or is the auth domain itself. Any other origin is silently dropped — no open redirect. Make sure the `return_to` origin is among your app's redirect URIs.
+</Aside>
+
+## Passkeys and enforced MFA
+
+If your workspace has `force_mfa: true`, **a passwordless passkey satisfies the MFA requirement on its own**: WebAuthn with user verification (biometric or PIN) is already possession + inherence, i.e. multi-factor. A user with a passkey does not additionally need a second factor; there is no conflict with the policy. (Recommended: confirm it on your instance after the first real enrollment.)
+
+## Admin-initiated enrollment (alternative)
+
+For one-off cases — assisted onboarding, recovery — a workspace admin can fire an enrollment link by email or raw:
+
+```bash
+curl -X POST https://api.prysmid.com/v1/workspaces/$WS/users/$USER_ID/passwordless \
+  -H "Authorization: Bearer $YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"delivery": "email"}'
+```
+
+Or via the MCP server with the `start_user_passkey` tool. This does **not** replace self-service — it's the admin-initiated path for when the user can't do it themselves. The definitive surface, which scales with no per-user action, is the `/account` page.
+
+## What's next
+
+- [Validate JWTs in your backend](/en/integrate/jwt-validation/)
+- [Custom branding](/en/integrate/custom-branding/) — the `/account` page inherits your instance's branding.
+- [Webhooks](/en/integrate/webhooks/)
