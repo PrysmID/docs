@@ -100,6 +100,7 @@ export default defineConfig({
           translations: { en: 'Integrate Prysm:ID' },
           items: [
             { slug: 'integrate/your-saas-app' },
+            { slug: 'integrate/passkeys' },
             { slug: 'integrate/jwt-validation' },
             { slug: 'integrate/custom-branding' },
             { slug: 'integrate/webhooks' },

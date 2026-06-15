@@ -1,0 +1,84 @@
+---
+title: Passkeys self-service para tus usuarios
+description: Cómo conectar la página de seguridad hospedada por Prysm:ID para que cualquier usuario final agregue y gestione sus passkeys, sin que tu producto construya UI de WebAuthn.
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+Tus usuarios finales pueden gestionar sus propios passkeys **por su cuenta**, sin que un admin los habilite uno por uno y **sin que tu producto escriba una sola línea de WebAuthn**. Prysm:ID hospeda la página; vos solo la enlazás.
+
+> Mandá al usuario a `https://<tu_slug>.auth.prysmid.com/account`. Listo.
+
+## Por qué un link y nada más
+
+El login de tu producto ya está delegado en Prysm:ID vía OIDC. El passkey es una credencial que vive en **tu instancia de Prysm:ID**, atada al dominio de esa instancia (el *RP ID* de WebAuthn). Por eso la única superficie donde el browser permite la ceremonia es bajo tu propio `auth_domain` — y por eso la página la hospedamos nosotros, no vos.
+
+La página corre el flujo OIDC Authorization Code + PKCE contra la instancia del usuario, y **toda** operación va contra la Auth API de Zitadel con el token del propio usuario. Nunca hay credenciales de admin en este camino: un usuario solo puede tocar sus propios autenticadores.
+
+## La URL
+
+| Instancia | Página de seguridad |
+|---|---|
+| Cualquier workspace | `https://<tu_slug>.auth.prysmid.com/account` |
+| Secrevo | `https://secrevo.auth.prysmid.com/account` |
+| Blenau | `https://blenau.auth.prysmid.com/account` |
+
+Es **idéntica en todas las instancias**: solo cambia el subdominio. Si usás un dominio propio (`auth.tudominio.com`), la página vive ahí mismo (`https://auth.tudominio.com/account`).
+
+`/account` redirige a `/account/security`. Si el usuario ya tiene sesión viva en ese dominio, el SSO es silencioso; si no, se autentica una vez y cae en la página.
+
+## Qué puede hacer el usuario ahí
+
+- **Ver** sus passkeys y segundos factores.
+- **Agregar** una passkey — un clic lanza la ceremonia WebAuthn nativa de Zitadel (Touch ID, Windows Hello, llave física, etc.).
+- **Quitar** una passkey.
+- **Quitar** la app de autenticación (TOTP).
+
+<Aside type="note">
+Hoy la página soporta **agregar y quitar**, no renombrar. El renombre de passkeys está en el backlog como fast-follow.
+</Aside>
+
+## Conectarlo desde tu producto
+
+<Steps>
+
+1. **Agregá un botón** en tu dashboard / página de cuenta: *"Gestionar seguridad"* o *"Agregar passkey"*.
+
+2. **Apuntalo a** `https://<tu_slug>.auth.prysmid.com/account`. Abrilo en la misma pestaña (el SSO necesita las cookies del dominio de auth) o en una pestaña nueva — las dos funcionan.
+
+   ```html
+   <a href="https://secrevo.auth.prysmid.com/account">
+     Agregar o gestionar passkeys
+   </a>
+   ```
+
+3. **Eso es todo.** No hay SDK que instalar, no hay endpoint que llamar, no hay `navigator.credentials` que implementar.
+
+</Steps>
+
+<Aside type="caution" title="Retorno al producto">
+Hoy **no** existe un parámetro `return_to`: cuando el usuario termina de enrolar, queda en la página de seguridad de Prysm:ID y vuelve a tu producto navegando hacia atrás. El retorno automático al producto tras enrolar es un fast-follow planificado. Si lo necesitás antes, avisá y se prioriza.
+</Aside>
+
+## Passkeys y MFA obligatorio
+
+Si tu workspace tiene `force_mfa: true`, **una passkey passwordless satisface el requisito de MFA por sí sola**: WebAuthn con verificación de usuario (biometría o PIN) ya es posesión + inherencia, o sea multifactor. El usuario con passkey no necesita además un segundo factor; no hay conflicto con la política. (Recomendado: validarlo en tu instancia tras el primer enrolamiento real.)
+
+## Enrolamiento iniciado por admin (alternativa)
+
+Para casos puntuales — onboarding asistido, recuperación — un admin del workspace puede disparar un link de enrolamiento por email o crudo:
+
+```bash
+curl -X POST https://api.prysmid.com/v1/workspaces/$WS/users/$USER_ID/passwordless \
+  -H "Authorization: Bearer $YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"delivery": "email"}'
+```
+
+O vía el MCP server con la tool `start_user_passkey`. Esto **no reemplaza** el self-service — es la vía admin-initiated para cuando el usuario no puede hacerlo solo. La superficie definitiva, que escala sin acción por usuario, es la página `/account`.
+
+## Lo que sigue
+
+- [Validar JWTs en tu backend](/integrate/jwt-validation/)
+- [Custom branding](/integrate/custom-branding/) — la página `/account` hereda el branding de tu instancia.
+- [Webhooks](/integrate/webhooks/)
